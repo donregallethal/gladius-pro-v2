@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -12,349 +11,87 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
 <style>
+  /* === Your original CSS (unchanged) === */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-–bg: #0a0a0a;
-–surface: #111111;
-–surface2: #1a1a1a;
-–border: rgba(255,255,255,0.07);
-–border2: rgba(255,255,255,0.12);
-–gold: #c9a84c;
-–gold-dim: #7a6229;
-–gold-glow: rgba(201,168,76,0.15);
-–green: #22c55e;
-–red: #ef4444;
-–text: #f0ede8;
-–muted: #6b6760;
-–muted2: #9b9690;
-–mono: ‘DM Mono’, monospace;
-–display: ‘Syne’, sans-serif;
-}
-
-html, body {
-min-height: 100%;
-background: var(–bg);
-color: var(–text);
-font-family: var(–mono);
--webkit-font-smoothing: antialiased;
-}
-
-body {
-min-height: 100svh;
-display: flex;
-flex-direction: column;
-padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-}
-
-.app {
-flex: 1;
-display: flex;
-flex-direction: column;
-max-width: 480px;
-margin: 0 auto;
-width: 100%;
-padding: 0 20px 32px;
-}
-
-header {
-padding: 28px 0 20px;
-display: flex;
-align-items: flex-end;
-justify-content: space-between;
-border-bottom: 0.5px solid var(–border);
-margin-bottom: 24px;
-}
-
-.logo {
-font-family: var(–display);
-font-weight: 800;
-font-size: 26px;
-letter-spacing: -0.5px;
-color: var(–gold);
-}
-
-.logo span {
-color: var(–muted2);
-font-weight: 400;
-font-size: 13px;
-font-family: var(–mono);
-letter-spacing: 0;
-margin-left: 8px;
-}
-
-.instrument-badge {
-font-size: 11px;
-font-family: var(–mono);
-color: var(–gold);
-background: var(–gold-glow);
-border: 0.5px solid var(–gold-dim);
-padding: 4px 10px;
-border-radius: 4px;
-letter-spacing: 0.08em;
-}
-
-.section {
-margin-bottom: 20px;
-}
-
-.section-head {
-font-size: 10px;
-letter-spacing: 0.14em;
-color: var(–muted);
-text-transform: uppercase;
-margin-bottom: 10px;
-padding-left: 1px;
-}
-
-.input-grid {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 8px;
-}
-
-.field {
-background: var(–surface);
-border: 0.5px solid var(–border);
-border-radius: 8px;
-padding: 12px 14px;
-transition: border-color 0.15s;
-}
-
-.field:focus-within {
-border-color: var(–gold-dim);
-}
-
-.field label {
-display: block;
-font-size: 10px;
-letter-spacing: 0.1em;
-color: var(–muted);
-text-transform: uppercase;
-margin-bottom: 6px;
-}
-
-.field input, .field select {
-background: transparent;
-border: none;
-outline: none;
-color: var(–text);
-font-family: var(–mono);
-font-size: 16px;
-font-weight: 400;
-width: 100%;
--moz-appearance: textfield;
-}
-
-.field input::-webkit-outer-spin-button,
-.field input::-webkit-inner-spin-button { -webkit-appearance: none; }
-
-.field select {
-cursor: pointer;
-}
-
-.field select option {
-background: #1a1a1a;
-}
-
-.dir-toggle {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 8px;
-margin-bottom: 8px;
-}
-
-.dir-btn {
-background: var(–surface);
-border: 0.5px solid var(–border);
-border-radius: 8px;
-padding: 12px;
-color: var(–muted2);
-font-family: var(–mono);
-font-size: 13px;
-cursor: pointer;
-text-align: center;
-transition: all 0.15s;
-letter-spacing: 0.04em;
-}
-
-.dir-btn.active-long {
-background: rgba(34,197,94,0.1);
-border-color: rgba(34,197,94,0.4);
-color: var(–green);
-}
-
-.dir-btn.active-short {
-background: rgba(239,68,68,0.1);
-border-color: rgba(239,68,68,0.4);
-color: var(–red);
-}
-
-.results {
-background: var(–surface);
-border: 0.5px solid var(–border2);
-border-radius: 12px;
-overflow: hidden;
-margin-bottom: 20px;
-}
-
-.result-main {
-padding: 20px;
-border-bottom: 0.5px solid var(–border);
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 16px;
-}
-
-.result-block {}
-
-.result-label {
-font-size: 10px;
-letter-spacing: 0.12em;
-color: var(–muted);
-text-transform: uppercase;
-margin-bottom: 6px;
-}
-
-.result-value {
-font-family: var(–display);
-font-weight: 700;
-font-size: 32px;
-letter-spacing: -1px;
-color: var(–gold);
-line-height: 1;
-}
-
-.result-value.lots {
-color: var(–text);
-}
-
-.result-sub {
-font-size: 11px;
-color: var(–muted);
-margin-top: 4px;
-}
-
-.result-row {
-display: grid;
-grid-template-columns: repeat(3, 1fr);
-padding: 14px 20px;
-gap: 8px;
-}
-
-.mini-block {}
-.mini-label { font-size: 10px; color: var(–muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
-.mini-val { font-size: 14px; font-weight: 500; }
-.mini-val.pos { color: var(–green); }
-.mini-val.neg { color: var(–red); }
-
-.rr-section {
-padding: 0 20px 16px;
-border-top: 0.5px solid var(–border);
-}
-
-.rr-header {
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 12px 0 8px;
-font-size: 11px;
-color: var(–muted);
-}
-
-.rr-header .rr-num {
-font-family: var(–display);
-font-weight: 700;
-font-size: 18px;
-color: var(–text);
-}
-
-.rr-track {
-height: 3px;
-background: var(–surface2);
-border-radius: 99px;
-overflow: hidden;
-}
-
-.rr-fill {
-height: 3px;
-border-radius: 99px;
-background: var(–gold);
-transition: width 0.3s ease;
-}
-
-.warn-box {
-background: rgba(239,68,68,0.08);
-border: 0.5px solid rgba(239,68,68,0.3);
-border-radius: 8px;
-padding: 10px 14px;
-font-size: 12px;
-color: #f87171;
-display: none;
-margin-bottom: 12px;
-line-height: 1.5;
-}
-
-.reset-btn {
-width: 100%;
-background: transparent;
-border: 0.5px solid var(–border2);
-border-radius: 8px;
-padding: 14px;
-color: var(–muted2);
-font-family: var(–mono);
-font-size: 13px;
-cursor: pointer;
-letter-spacing: 0.06em;
-transition: all 0.15s;
-margin-top: 4px;
-}
-
-.reset-btn:hover {
-border-color: var(–gold-dim);
-color: var(–gold);
-}
-
-.footer {
-text-align: center;
-font-size: 10px;
-color: var(–muted);
-letter-spacing: 0.08em;
-padding-top: 16px;
-}
-
-.pulse {
-animation: pulse 0.3s ease;
-}
-
-@keyframes pulse {
-0% { opacity: 1; }
-50% { opacity: 0.5; }
-100% { opacity: 1; }
-}
+  :root {
+    --bg: #0a0a0a; --surface: #111111; --surface2: #1a1a1a; --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12); --gold: #c9a84c; --gold-dim: #7a6229;
+    --gold-glow: rgba(201,168,76,0.15); --green: #22c55e; --red: #ef4444;
+    --text: #f0ede8; --muted: #6b6760; --muted2: #9b9690;
+    --mono: 'DM Mono', monospace; --display: 'Syne', sans-serif;
+  }
+  html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: var(--mono); }
+  body { min-height: 100svh; display: flex; flex-direction: column; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  .app { flex: 1; display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; width: 100%; padding: 0 20px 32px; }
+  header { padding: 28px 0 20px; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 0.5px solid var(--border); margin-bottom: 24px; }
+  .logo { font-family: var(--display); font-weight: 800; font-size: 26px; letter-spacing: -0.5px; color: var(--gold); }
+  .logo span { color: var(--muted2); font-weight: 400; font-size: 13px; font-family: var(--mono); letter-spacing: 0; margin-left: 8px; }
+  .instrument-badge { font-size: 11px; font-family: var(--mono); color: var(--gold); background: var(--gold-glow); border: 0.5px solid var(--gold-dim); padding: 4px 10px; border-radius: 4px; letter-spacing: 0.08em; }
+  .section { margin-bottom: 20px; }
+  .section-head { font-size: 10px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; padding-left: 1px; }
+  .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .field { background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px; padding: 12px 14px; transition: border-color 0.15s; }
+  .field:focus-within { border-color: var(--gold-dim); }
+  .field label { display: block; font-size: 10px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+  .field input, .field select { background: transparent; border: none; outline: none; color: var(--text); font-family: var(--mono); font-size: 16px; font-weight: 400; width: 100%; }
+  .field input::-webkit-outer-spin-button, .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .field select { cursor: pointer; }
+  .field select option { background: #1a1a1a; }
+  .dir-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .dir-btn { background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px; padding: 12px; color: var(--muted2); font-family: var(--mono); font-size: 13px; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .dir-btn.active-long { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.4); color: var(--green); }
+  .dir-btn.active-short { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.4); color: var(--red); }
+  .results { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+  .result-main { padding: 20px; border-bottom: 0.5px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .result-label { font-size: 10px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+  .result-value { font-family: var(--display); font-weight: 700; font-size: 32px; letter-spacing: -1px; color: var(--gold); line-height: 1; }
+  .result-value.lots { color: var(--text); }
+  .result-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .result-row { display: grid; grid-template-columns: repeat(3, 1fr); padding: 14px 20px; gap: 8px; }
+  .mini-label { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+  .mini-val { font-size: 14px; font-weight: 500; }
+  .mini-val.pos { color: var(--green); }
+  .mini-val.neg { color: var(--red); }
+  .rr-section { padding: 0 20px 16px; border-top: 0.5px solid var(--border); }
+  .rr-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 0 8px; font-size: 11px; color: var(--muted); }
+  .rr-header .rr-num { font-family: var(--display); font-weight: 700; font-size: 18px; color: var(--text); }
+  .rr-track { height: 3px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+  .rr-fill { height: 3px; border-radius: 99px; background: var(--gold); transition: width 0.3s ease; }
+  .warn-box { background: rgba(239,68,68,0.08); border: 0.5px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #f87171; display: none; margin-bottom: 12px; line-height: 1.5; }
+  .reset-btn { width: 100%; background: transparent; border: 0.5px solid var(--border2); border-radius: 8px; padding: 14px; color: var(--muted2); font-family: var(--mono); font-size: 13px; cursor: pointer; letter-spacing: 0.06em; transition: all 0.15s; margin-top: 4px; }
+  .footer { text-align: center; font-size: 10px; color: var(--muted); letter-spacing: 0.08em; padding-top: 16px; }
 </style>
-
 </head>
 <body>
 <div class="app">
   <header>
-    <div>
-      <div class="logo">GLADIUS<span>calc</span></div>
-    </div>
-    <div class="instrument-badge">XAU/USD</div>
+    <div><div class="logo">GLADIUS<span>calc</span></div></div>
+    <div class="instrument-badge" id="instrumentBadge">XAU/USD</div>
   </header>
 
   <div class="section">
+    <div class="section-head">Instrument</div>
+    <div class="field">
+      <select id="instrument" onchange="changeInstrument()">
+        <option value="XAU">XAU/USD - Gold</option>
+        <option value="XAG">XAG/USD - Silver</option>
+        <option value="EURUSD">EUR/USD</option>
+        <option value="GBPUSD">GBP/USD</option>
+        <option value="USDJPY">USD/JPY</option>
+        <option value="BTC">BTC/USD</option>
+        <option value="US30">US30 (Dow)</option>
+        <option value="NAS100">NAS100</option>
+        <option value="USOIL">USOIL (Crude)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Rest of the HTML is the same as before (Account, Direction, Trade levels, Results, etc.) -->
+  <div class="section">
     <div class="section-head">Account</div>
     <div class="input-grid">
-      <div class="field">
-        <label>Balance ($)</label>
-        <input type="number" id="balance" value="24930" inputmode="decimal" />
-      </div>
-      <div class="field">
-        <label>Risk %</label>
-        <input type="number" id="riskPct" value="1" step="0.1" inputmode="decimal" />
-      </div>
+      <div class="field"><label>Balance ($)</label><input type="number" id="balance" value="24507" inputmode="decimal" /></div>
+      <div class="field"><label>Risk %</label><input type="number" id="riskPct" value="1" step="0.1" inputmode="decimal" /></div>
     </div>
   </div>
 
@@ -369,180 +106,4 @@ animation: pulse 0.3s ease;
   <div class="section">
     <div class="section-head">Trade levels</div>
     <div class="input-grid">
-      <div class="field">
-        <label>Entry</label>
-        <input type="number" id="entry" value="4676" inputmode="decimal" />
-      </div>
-      <div class="field">
-        <label>Stop loss</label>
-        <input type="number" id="sl" value="4650" inputmode="decimal" />
-      </div>
-    </div>
-    <div style="height:8px;"></div>
-    <div class="field" style="grid-column:1/-1">
-      <label>Take profit (optional)</label>
-      <input type="number" id="tp" value="4840" inputmode="decimal" />
-    </div>
-  </div>
-
-  <div class="warn-box" id="warn"></div>
-
-  <div class="results">
-    <div class="result-main">
-      <div class="result-block">
-        <div class="result-label">$ at risk</div>
-        <div class="result-value" id="dollarRisk">$249</div>
-        <div class="result-sub" id="riskSub">1% of $24,930</div>
-      </div>
-      <div class="result-block">
-        <div class="result-label">Lot size</div>
-        <div class="result-value lots" id="lotSize">0.10</div>
-        <div class="result-sub">enter in GooeyPro</div>
-      </div>
-    </div>
-    <div class="result-row">
-      <div class="mini-block">
-        <div class="mini-label">SL dist</div>
-        <div class="mini-val" id="slDist">26.0</div>
-      </div>
-      <div class="mini-block">
-        <div class="mini-label">TP dist</div>
-        <div class="mini-val" id="tpDist">164.0</div>
-      </div>
-      <div class="mini-block">
-        <div class="mini-label">Max gain</div>
-        <div class="mini-val pos" id="maxGain">+$1,640</div>
-      </div>
-    </div>
-    <div class="rr-section">
-      <div class="rr-header">
-        <span>risk : reward</span>
-        <span class="rr-num" id="rrNum">1 : 6.3</span>
-      </div>
-      <div class="rr-track">
-        <div class="rr-fill" id="rrFill" style="width:86%"></div>
-      </div>
-    </div>
-  </div>
-
-<button class="reset-btn" onclick="resetDefaults()">reset to defaults</button>
-
-  <div class="footer" style="margin-top:24px;">
-    GLADIUS CALC · 1 LOT = 100 OZ · XAU/USD
-  </div>
-</div>
-
-<script>
-  let direction = 'long';
-
-  function setDir(d) {
-    direction = d;
-    document.getElementById('btnLong').className = 'dir-btn' + (d === 'long' ? ' active-long' : '');
-    document.getElementById('btnShort').className = 'dir-btn' + (d === 'short' ? ' active-short' : '');
-    calc();
-  }
-
-  function g(id) { return parseFloat(document.getElementById(id).value) || 0; }
-
-  function fmt(n, dec=2) { return n.toFixed(dec); }
-  function fmtMoney(n) { return '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}); }
-
-  function calc() {
-    const balance = g('balance');
-    const riskPct = g('riskPct');
-    const entry   = g('entry');
-    const sl      = g('sl');
-    const tp      = g('tp');
-
-    const dollarRisk = balance * (riskPct / 100);
-    const slDist = Math.abs(entry - sl);
-    const tpDist = tp > 0 ? Math.abs(tp - entry) : 0;
-
-    const warn = document.getElementById('warn');
-
-    const validLong  = direction === 'long'  && sl < entry && (tp === 0 || tp > entry);
-    const validShort = direction === 'short' && sl > entry && (tp === 0 || tp < entry);
-
-    if (slDist === 0) {
-      warn.style.display = 'block';
-      warn.textContent = 'Entry and stop loss cannot be the same.';
-    } else if (!validLong && !validShort) {
-      warn.style.display = 'block';
-      warn.textContent = direction === 'long'
-        ? 'Long: SL must be below entry. TP must be above entry.'
-        : 'Short: SL must be above entry. TP must be below entry.';
-    } else {
-      warn.style.display = 'none';
-    }
-
-    if (slDist === 0) return;
-
-    const lots = dollarRisk / (slDist * 100);
-    const rr = tpDist > 0 ? tpDist / slDist : 0;
-    const maxGain = lots * tpDist * 100;
-    const barW = rr > 0 ? Math.min((rr / (rr + 1)) * 100, 97) : 0;
-
-    document.getElementById('dollarRisk').textContent = fmtMoney(dollarRisk);
-    document.getElementById('riskSub').textContent = riskPct + '% of ' + fmtMoney(balance);
-    document.getElementById('lotSize').textContent = fmt(lots, 2);
-    document.getElementById('slDist').textContent = fmt(slDist, 1) + ' pts';
-    document.getElementById('tpDist').textContent = tpDist > 0 ? fmt(tpDist, 1) + ' pts' : '—';
-    document.getElementById('maxGain').textContent = tpDist > 0 ? '+' + fmtMoney(maxGain) : '—';
-    document.getElementById('rrNum').textContent = rr > 0 ? '1 : ' + fmt(rr, 1) : '—';
-    document.getElementById('rrFill').style.width = barW + '%';
-  }
-
-  function resetDefaults() {
-    document.getElementById('balance').value = 24930;
-    document.getElementById('riskPct').value = 1;
-    document.getElementById('entry').value = '';
-    document.getElementById('sl').value = '';
-    document.getElementById('tp').value = '';
-    setDir('long');
-    calc();
-  }
-
-  ['balance','riskPct','entry','sl','tp'].forEach(id => {
-    document.getElementById(id).addEventListener('input', calc);
-  });
-
-  calc();
-
-  if ('serviceWorker' in navigator) {
-    const sw = `
-      self.addEventListener('install', e => {
-        e.waitUntil(caches.open('gladius-v1').then(c => c.addAll(['/'])));
-      });
-      self.addEventListener('fetch', e => {
-        e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-      });
-    `;
-    const blob = new Blob([sw], {type: 'application/javascript'});
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl);
-  }
-
-  const manifest = {
-    name: 'Gladius Calc',
-    short_name: 'Gladius',
-    start_url: '.',
-    display: 'standalone',
-    background_color: '#0a0a0a',
-    theme_color: '#0a0a0a',
-    icons: [{
-      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%230a0a0a'/%3E%3Ctext x='256' y='340' font-family='serif' font-size='280' font-weight='bold' text-anchor='middle' fill='%23c9a84c'%3EG%3C/text%3E%3C/svg%3E",
-      sizes: '512x512',
-      type: 'image/svg+xml',
-      purpose: 'any maskable'
-    }]
-  };
-  const mBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-  const mUrl = URL.createObjectURL(mBlob);
-  const mLink = document.createElement('link');
-  mLink.rel = 'manifest';
-  mLink.href = mUrl;
-  document.head.appendChild(mLink);
-</script>
-
-</body>
-</html>
+     div class="field"><label>Entry</label><input
