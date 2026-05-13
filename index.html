@@ -1,269 +1,956 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#0a0a0a" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<title>Gladius Calc</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #0a0a0a;
-    --surface: #111111;
-    --surface2: #1a1a1a;
-    --border: rgba(255,255,255,0.08);
-    --border2: rgba(201,168,76,0.15);
-    --gold: #c9a84c;
-    --gold-dim: #7a6229;
-    --green: #22c55e;
-    --red: #ef4444;
-    --text: #f0ede8;
-    --muted: #9b9690;
-    --mono: 'DM Mono', monospace;
-    --display: 'Syne', sans-serif;
-  }
-  html, body {
-    min-height: 100%; background: var(--bg); color: var(--text);
-    font-family: var(--mono); -webkit-font-smoothing: antialiased;
-  }
-  body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-  .app { max-width: 480px; margin: 0 auto; padding: 0 16px 32px; }
-  header {
-    padding: 24px 0 20px;
-    display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid var(--border);
-  }
-  .logo {
-    font-family: var(--display); font-weight: 800; font-size: 28px;
-    letter-spacing: -1px; color: var(--gold);
-  }
-  .instrument-badge {
-    font-size: 12px; padding: 6px 12px; border-radius: 6px;
-    background: rgba(201,168,76,0.1); color: var(--gold);
-    border: 1px solid var(--gold-dim);
-  }
-  .section { margin-bottom: 24px; }
-  .section-head {
-    font-size: 11px; letter-spacing: 1.2px; color: var(--muted);
-    text-transform: uppercase; margin-bottom: 10px;
-  }
-  .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .field {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 14px 16px;
-  }
-  .field label {
-    display: block; font-size: 10px; color: var(--muted);
-    margin-bottom: 6px; letter-spacing: 0.5px;
-  }
-  .field input, .field select {
-    background: transparent; border: none; outline: none;
-    color: var(--text); font-size: 17px; width: 100%;
-  }
-  .dir-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .dir-btn {
-    padding: 16px; border-radius: 12px; text-align: center;
-    font-size: 15px; font-weight: 600; border: 1px solid var(--border);
-  }
-  .active-long { background: rgba(34,197,94,0.15); border-color: var(--green); color: var(--green); }
-  .active-short { background: rgba(239,68,68,0.15); border-color: var(--red); color: var(--red); }
-  .results {
-    background: var(--surface2); border: 1px solid var(--border2);
-    border-radius: 16px; overflow: hidden;
-  }
-  .result-main {
-    padding: 20px; display: flex; justify-content: space-between;
-    border-bottom: 1px solid var(--border);
-  }
-  .result-value {
-    font-family: var(--display); font-size: 36px; font-weight: 700;
-    color: var(--gold); line-height: 1;
-  }
-  .result-value.lots { color: #fff; }
-  .result-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-  .result-row {
-    display: grid; grid-template-columns: 1fr 1fr 1fr;
-    padding: 16px 20px; gap: 8px; border-top: 1px solid var(--border);
-  }
-  .mini-label { font-size: 10px; color: var(--muted); }
-  .mini-val { font-size: 15px; font-weight: 500; }
-  .rr-section {
-    padding: 16px 20px; border-top: 1px solid var(--border);
-  }
-  .rr-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-  .rr-num { font-family: var(--display); font-size: 22px; font-weight: 700; color: var(--gold); }
-  .reset-btn {
-    width: 100%; background: transparent; border: 1px solid var(--border);
-    color: var(--muted); padding: 16px; border-radius: 12px; margin-top: 20px;
-  }
-</style>
-</head>
-<body>
-<div class="app">
-  <header>
-    <div class="logo">GLADIUS <span style="font-size:15px;color:#666;">pro</span></div>
-    <div class="instrument-badge" id="instrumentBadge">XAU/USD</div>
-  </header>
+import React from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { Svg, Rect, Path, Circle, Line, Text as SvgText } from 'react-native-svg';
+import { useState, useEffect } from 'react';
+import {
+  StyleSheet, Text, View, ScrollView, TouchableOpacity,
+  TextInput, SafeAreaView, Alert, Platform, KeyboardAvoidingView
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-  <div class="section">
-    <div class="section-head">Instrument</div>
-    <div class="field">
-      <select id="instrument" onchange="changeInstrument()">
-        <option value="XAU">XAU/USD - Gold (100 oz)</option>
-        <option value="XAG">XAG/USD - Silver (5000 oz)</option>
-        <option value="EURUSD">EUR/USD</option>
-        <option value="GBPUSD">GBP/USD</option>
-        <option value="USDJPY">USD/JPY</option>
-        <option value="BTC">BTC/USD</option>
-        <option value="US30">US30 (Dow)</option>
-        <option value="NAS100">NAS100</option>
-        <option value="USOIL">USOIL (Crude)</option>
-      </select>
-    </div>
-  </div>
+const C = {
+  bg: '#0a0a0a', sur: '#141414', sur2: '#1c1c1c',
+  gold: '#c9a84c', gdim: '#7a6229', gbg: 'rgba(201,168,76,0.1)',
+  grn: '#22c55e', grbg: 'rgba(34,197,94,0.1)',
+  red: '#ef4444', rdbg: 'rgba(239,68,68,0.1)',
+  blue: '#3b82f6', blbg: 'rgba(59,130,246,0.1)',
+  tx: '#ffffff', mu: '#8a8885', mu2: '#c0bdb8',
+  b1: 'rgba(255,255,255,0.08)', b2: 'rgba(255,255,255,0.14)',
+};
 
-  <div class="section">
-    <div class="section-head">Account</div>
-    <div class="input-grid">
-      <div class="field">
-        <label>BALANCE ($)</label>
-        <input type="number" id="balance" value="24843.75" inputmode="decimal" />
-      </div>
-      <div class="field">
-        <label>RISK %</label>
-        <input type="number" id="riskPct" value="1" step="0.1" inputmode="decimal" />
-      </div>
-    </div>
-  </div>
+const INST = {
+  // Metals
+  XAUUSD: { m: 100, n: '1 lot = 100 oz · approx $100/pt per lot (price-dependent)', l: 'XAU/USD', cat: 'Metals' },
+  XAGUSD: { m: 5000, n: '1 lot = 5000 oz silver · verify with broker', l: 'XAG/USD', cat: 'Metals' },
+  // Forex
+  EURUSD: { m: 100000, n: '1 lot = 100k units · $10/pip per lot', l: 'EUR/USD', cat: 'Forex' },
+  GBPUSD: { m: 100000, n: '1 lot = 100k units · $10/pip per lot', l: 'GBP/USD', cat: 'Forex' },
+  GBPJPY: { m: 100000, n: '1 lot = 100k units · approx 650 JPY/pip per lot', l: 'GBP/JPY', cat: 'Forex' },
+  GBPNZD: { m: 100000, n: '1 lot = 100k units · approx NZD-quoted', l: 'GBP/NZD', cat: 'Forex' },
+  EURGBP: { m: 100000, n: '1 lot = 100k units · approx GBP-quoted', l: 'EUR/GBP', cat: 'Forex' },
+  EURJPY: { m: 100000, n: '1 lot = 100k units · JPY-quoted: enter USD/JPY rate below for accurate lot size', l: 'EUR/JPY', cat: 'Forex', jpyCross: true },
+  USDJPY: { m: 100000, n: '1 lot = 100k units · JPY-quoted: enter current USD/JPY price below for accurate lot size', l: 'USD/JPY', cat: 'Forex', jpyDirect: true },
+  AUDJPY: { m: 100000, n: '1 lot = 100k units · approx 650 JPY/pip per lot', l: 'AUD/JPY', cat: 'Forex' },
+  CADJPY: { m: 100000, n: '1 lot = 100k units · approx 650 JPY/pip per lot', l: 'CAD/JPY', cat: 'Forex' },
+  AUDUSD: { m: 100000, n: '1 lot = 100k units · $10/pip per lot', l: 'AUD/USD', cat: 'Forex' },
+  USDCAD: { m: 100000, n: '1 lot = 100k units · approx $7.5/pip', l: 'USD/CAD', cat: 'Forex' },
+  USDCHF: { m: 100000, n: '1 lot = 100k units · approx $11/pip', l: 'USD/CHF', cat: 'Forex' },
+  USDINR: { m: 100000, n: '1 lot = 100k units · exotic pair, verify pip value with broker', l: 'USD/INR', cat: 'Forex' },
+  // Crypto
+  BTCUSD: { m: 1, n: '1 lot = 1 BTC · $1/pt per lot', l: 'BTC/USD', cat: 'Crypto' },
+  ETHUSD: { m: 1, n: '1 lot = 1 ETH · verify with broker', l: 'ETH/USD', cat: 'Crypto' },
+  XRPUSD: { m: 1, n: '1 lot = 1 XRP · verify with broker', l: 'XRP/USD', cat: 'Crypto' },
+  ADAUSD: { m: 1, n: '1 lot = 1 ADA · verify with broker', l: 'ADA/USD', cat: 'Crypto' },
+  GBTC: { m: 1, n: 'CFD: GBTC Bitcoin Trust · verify with broker', l: 'GBTC', cat: 'Crypto' },
+  // Indices
+  US30: { m: 1, n: '1 unit = $1/pt · verify with broker', l: 'US30', cat: 'Indices' },
+  NAS100: { m: 1, n: '1 unit = $1/pt · verify with broker', l: 'NAS100', cat: 'Indices' },
+  GER30: { m: 1, n: '1 unit = €1/pt · verify with broker', l: 'GER30', cat: 'Indices' },
+  // Commodities
+  OIL: { m: 1000, n: '1 lot = 1000 barrels · verify with broker', l: 'OIL', cat: 'Commodities' },
+  // Stocks
+  TSLA: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'TSLA', cat: 'Stocks' },
+  NVDA: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'NVDA', cat: 'Stocks' },
+  SHOP: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'SHOP', cat: 'Stocks' },
+  TSN: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'TSN', cat: 'Stocks' },
+  V: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'V', cat: 'Stocks' },
+  AAP: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'AAP', cat: 'Stocks' },
+  ABCB: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'ABCB', cat: 'Stocks' },
+  LMT: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'LMT', cat: 'Stocks' },
+  GERN: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'GERN', cat: 'Stocks' },
+  GGAL: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'GGAL', cat: 'Stocks' },
+  AEE: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'AEE', cat: 'Stocks' },
+  VST: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'VST', cat: 'Stocks' },
+  AERO: { m: 1, n: 'CFD: 1 lot = 1 share · verify with broker', l: 'AERO', cat: 'Stocks' },
+};
 
-  <div class="section">
-    <div class="section-head">Direction</div>
-    <div class="dir-toggle">
-      <button class="dir-btn active-long" id="btnLong" onclick="setDir('long')">▲ Long</button>
-      <button class="dir-btn" id="btnShort" onclick="setDir('short')">▼ Short</button>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-head">Trade Levels</div>
-    <div class="input-grid">
-      <div class="field"><label>ENTRY</label><input type="number" id="entry" value="4676" /></div>
-      <div class="field"><label>STOP LOSS</label><input type="number" id="sl" value="4650" /></div>
-    </div>
-    <div class="field" style="margin-top:12px;">
-      <label>TAKE PROFIT (OPTIONAL)</label>
-      <input type="number" id="tp" value="4840" />
-    </div>
-  </div>
-
-  <div class="results">
-    <div class="result-main">
-      <div>
-        <div style="font-size:11px;color:var(--muted);">AT RISK</div>
-        <div class="result-value" id="dollarRisk">$249</div>
-        <div class="result-sub" id="riskSub">1% of $24,843</div>
-      </div>
-      <div>
-        <div style="font-size:11px;color:var(--muted);">LOT SIZE</div>
-        <div class="result-value lots" id="lotSize">0.10</div>
-        <div class="result-sub">enter in GooeyPro</div>
-      </div>
-    </div>
-
-    <div class="result-row">
-      <div><div class="mini-label">SL DIST</div><div class="mini-val" id="slDist">26.0</div></div>
-      <div><div class="mini-label">TP DIST</div><div class="mini-val" id="tpDist">164.0</div></div>
-      <div><div class="mini-label">MAX GAIN</div><div class="mini-val" id="maxGain" style="color:var(--green);">+$1,573</div></div>
-    </div>
-
-    <div class="rr-section">
-      <div class="rr-header">
-        <span style="color:var(--muted);">RISK : REWARD</span>
-        <span class="rr-num" id="rrNum">1 : 6.3</span>
-      </div>
-    </div>
-  </div>
-
-  <button class="reset-btn" onclick="resetDefaults()">RESET TO DEFAULTS</button>
-</div>
-
-<script>
-  let direction = 'long';
-  let currentInstrument = 'XAU';
-
-  const instruments = {
-    XAU:    { name: "XAU/USD", valuePerPoint: 100,   decimals: 2 },
-    XAG:    { name: "XAG/USD", valuePerPoint: 5000,  decimals: 3 },
-    EURUSD: { name: "EUR/USD", valuePerPoint: 100000,decimals: 5 },
-    GBPUSD: { name: "GBP/USD", valuePerPoint: 100000,decimals: 5 },
-    USDJPY: { name: "USD/JPY", valuePerPoint: 100000,decimals: 3 },
-    BTC:    { name: "BTC/USD", valuePerPoint: 1,     decimals: 2 },
-    US30:   { name: "US30",    valuePerPoint: 1,     decimals: 2 },
-    NAS100: { name: "NAS100",  valuePerPoint: 1,     decimals: 2 },
-    USOIL:  { name: "USOIL",   valuePerPoint: 100,   decimals: 3 }
-  };
-
-  function g(id) { return parseFloat(document.getElementById(id).value) || 0; }
-
-  function changeInstrument() {
-    currentInstrument = document.getElementById('instrument').value;
-    document.getElementById('instrumentBadge').textContent = instruments[currentInstrument].name;
-    calc();
-  }
-
-  function setDir(d) {
-    direction = d;
-    document.getElementById('btnLong').classList.toggle('active-long', d === 'long');
-    document.getElementById('btnShort').classList.toggle('active-short', d === 'short');
-    calc();
-  }
-
-  function calc() {
-    const balance = g('balance');
-    const riskPct = g('riskPct');
-    const entry = g('entry');
-    const sl = g('sl');
-    const tp = g('tp');
-
-    const dollarRisk = balance * (riskPct / 100);
-    const slDist = Math.abs(entry - sl);
-    const tpDist = tp > 0 ? Math.abs(tp - entry) : 0;
-    const inst = instruments[currentInstrument];
-
-    const lots = slDist > 0 ? dollarRisk / (slDist * inst.valuePerPoint) : 0;
-    const rr = tpDist > 0 ? tpDist / slDist : 0;
-    const maxGain = lots * tpDist * inst.valuePerPoint;
-
-    document.getElementById('dollarRisk').textContent = '$' + Math.round(dollarRisk);
-    document.getElementById('riskSub').textContent = riskPct + '% of $' + balance.toLocaleString();
-    document.getElementById('lotSize').textContent = lots.toFixed(2);
-    document.getElementById('slDist').textContent = slDist.toFixed(inst.decimals);
-    document.getElementById('tpDist').textContent = tpDist > 0 ? tpDist.toFixed(inst.decimals) : '—';
-    document.getElementById('maxGain').textContent = tpDist > 0 ? '+$' + Math.round(maxGain) : '—';
-    document.getElementById('rrNum').textContent = tpDist > 0 ? '1 : ' + rr.toFixed(1) : '—';
-  }
-
-  function resetDefaults() {
-    document.getElementById('balance').value = 24843.75;
-    document.getElementById('riskPct').value = 1;
-    document.getElementById('entry').value = 4676;
-    document.getElementById('sl').value = 4650;
-    document.getElementById('tp').value = 4840;
-    document.getElementById('instrument').value = 'XAU';
-    changeInstrument();
-  }
-
-  ['balance','riskPct','entry','sl','tp'].forEach(id => {
-    document.getElementById(id).addEventListener('input', calc);
+const INST_KEYS = Object.keys(INST);
+const INST_GROUPS = ['Metals','Forex','Crypto','Indices','Commodities','Stocks'];
+const INST_LABELS = (() => {
+  const result = [];
+  INST_GROUPS.forEach(cat => {
+    const items = INST_KEYS.filter(k => INST[k].cat === cat);
+    if (items.length > 0) {
+      result.push({ key: '__' + cat, label: cat, isHeader: true });
+      items.forEach(k => result.push({ key: k, label: INST[k].l }));
+    }
   });
+  return result;
+})();
+const CH = { profitTarget: 27500, dailyFloor: 23683.50, ddFloor: 23500, startBal: 24930 };
+const HOLIDAYS = ['2026-01-01','2026-04-03','2026-04-06','2026-05-25','2026-12-25','2026-12-26'];
+const MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const WDY = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const SESS = [
+  { n: 'Sydney',   op: 22, cl: 7,  tz: 'AEST (UTC+10/11)', rx: [110, 180] },
+  { n: 'Tokyo',    op: 0,  cl: 9,  tz: 'JST (UTC+9)',       rx: [90, 150]  },
+  { n: 'London',   op: 8,  cl: 17, tz: 'GMT (UTC+0)',       rx: [-15, 45]  },
+  { n: 'New York', op: 13, cl: 22, tz: 'EST (UTC-5)',       rx: [-125, -45]},
+];
 
-  // Initialize
-  changeInstrument();
-  calc();
-</script>
-</body>
-</html>
+function fm(n) { return '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fms(n) { return (n >= 0 ? '+' : '-') + fm(n); }
+function isHoliday(d) { const s = d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0'); return HOLIDAYS.includes(s); }
+function isWeekend(d) { const dy = d.getUTCDay(); return dy === 6 || (dy === 0 && d.getUTCHours() < 21); }
+function sessOpen(s, h, m) { const now = h*60+m, op = s.op*60, cl = s.cl*60; if (s.op < s.cl) return now >= op && now < cl; return now >= op || now < cl; }
+function minsLeft(s, h, m) { const now = h*60+m, op = s.op*60, cl = s.cl*60, T = 1440; if (sessOpen(s,h,m)) return cl > now ? cl-now : cl+T-now; return op > now ? op-now : op+T-now; }
+function fmtCD(mins) { return Math.floor(mins/60) + 'h ' + String(mins%60).padStart(2,'0') + 'm'; }
+
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: C.bg },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: C.b1 },
+  logo: { fontSize: 20, fontWeight: '700', color: C.gold, letterSpacing: -0.5 },
+  logoSub: { color: C.mu2, fontWeight: '400', fontSize: 10 },
+  balPill: { backgroundColor: C.gbg, borderWidth: 0.5, borderColor: C.gdim, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 99 },
+  balPillTx: { color: C.gold, fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  tabs: { flexDirection: 'row', paddingHorizontal: 20, borderBottomWidth: 0.5, borderBottomColor: C.b1 },
+  tab: { flex: 1, paddingVertical: 8, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tabOn: { borderBottomColor: C.gold },
+  tabTx: { color: C.mu, fontSize: 9, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', textTransform: 'uppercase', letterSpacing: 0.6 },
+  tabTxOn: { color: C.gold },
+  scroll: { flex: 1 },
+  pad: { padding: 18 },
+  sh: { fontSize: 10, color: C.mu, textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: 9, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  sec: { marginBottom: 14 },
+  card: { backgroundColor: C.sur, borderWidth: 0.5, borderColor: C.b1, borderRadius: 10, padding: 12, marginBottom: 8 },
+  cardLabel: { fontSize: 10, color: C.mu, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  cardInput: { color: C.tx, fontSize: 15, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  row2: { flexDirection: 'row', gap: 8 },
+  half: { flex: 1 },
+  note: { backgroundColor: C.sur2, borderWidth: 0.5, borderColor: C.b1, borderRadius: 8, padding: 10, marginBottom: 8 },
+  noteTx: { color: C.mu2, fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', lineHeight: 18 },
+  dirRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  dirBtn: { flex: 1, backgroundColor: C.sur, borderWidth: 0.5, borderColor: C.b1, borderRadius: 8, paddingVertical: 12, alignItems: 'center' },
+  dirBtnLng: { backgroundColor: C.grbg, borderColor: 'rgba(34,197,94,0.4)' },
+  dirBtnSht: { backgroundColor: C.rdbg, borderColor: 'rgba(239,68,68,0.4)' },
+  dirTx: { color: C.mu2, fontSize: 13, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  dirTxLng: { color: C.grn },
+  dirTxSht: { color: C.red },
+  resBox: { backgroundColor: C.sur, borderWidth: 0.5, borderColor: C.b2, borderRadius: 12, overflow: 'hidden', marginVertical: 12 },
+  resMain: { flexDirection: 'row', padding: 14, borderBottomWidth: 0.5, borderBottomColor: C.b1 },
+  resBlock: { flex: 1 },
+  resLabel: { fontSize: 10, color: C.mu, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 3, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  resVal: { fontSize: 26, fontWeight: '700', color: C.gold, letterSpacing: -1 },
+  resValWh: { color: C.tx },
+  resSub: { fontSize: 10, color: C.mu, marginTop: 2, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  resRow: { flexDirection: 'row', padding: 12, gap: 8 },
+  resItem: { flex: 1 },
+  miniLabel: { fontSize: 10, color: C.mu, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  miniVal: { fontSize: 12, fontWeight: '500', color: C.tx, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  miniPos: { color: C.grn },
+  rrSec: { padding: 12, borderTopWidth: 0.5, borderTopColor: C.b1 },
+  rrRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  rrLabel: { fontSize: 10, color: C.mu, textTransform: 'uppercase', letterSpacing: 0.8, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  rrVal: { fontSize: 14, fontWeight: '700', color: C.tx },
+  rrTrack: { height: 2, backgroundColor: C.sur2, borderRadius: 99 },
+  rrFill: { height: 2, backgroundColor: C.gold, borderRadius: 99 },
+  logBtn: { backgroundColor: C.gbg, borderWidth: 0.5, borderColor: C.gdim, borderRadius: 8, paddingVertical: 13, alignItems: 'center', marginBottom: 8 },
+  logBtnTx: { color: C.gold, fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', textTransform: 'uppercase', letterSpacing: 0.6 },
+  ghost: { backgroundColor: 'transparent', borderWidth: 0.5, borderColor: C.b2, borderRadius: 8, paddingVertical: 11, alignItems: 'center', flex: 1 },
+  ghostTx: { color: C.mu2, fontSize: 10, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', textTransform: 'uppercase', letterSpacing: 0.6 },
+  warn: { backgroundColor: C.rdbg, borderWidth: 0.5, borderColor: 'rgba(239,68,68,0.3)', borderRadius: 8, padding: 10, marginBottom: 8 },
+  warnTx: { color: '#f87171', fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  bdis: { backgroundColor: C.sur, borderWidth: 0.5, borderColor: C.b2, borderRadius: 12, padding: 18, marginBottom: 12, alignItems: 'center' },
+  bbig: { fontSize: 34, fontWeight: '800', color: C.gold, letterSpacing: -2, lineHeight: 36 },
+  bch: { fontSize: 12, marginTop: 4 },
+  bsub: { fontSize: 10, color: C.mu, marginTop: 3, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  s3: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  statCard: { flex: 1, backgroundColor: C.sur, borderWidth: 0.5, borderColor: C.b1, borderRadius: 8, padding: 10, alignItems: 'center' },
+  statLabel: { fontSize: 10, color: C.mu, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  statVal: { fontSize: 16, fontWeight: '700', color: C.tx },
+  statPos: { color: C.grn },
+  statNeg: { color: C.red },
+  lf: { backgroundColor: C.sur, borderWidth: 0.5, borderColor: C.b1, borderRadius: 12, padding: 14, marginBottom: 12 },
+  o3: { flexDirection: 'row', gap: 6, marginBottom: 10 },
+  ob: { flex: 1, backgroundColor: C.sur2, borderWidth: 0.5, borderColor: C.b1, borderRadius: 6, paddingVertical: 11, alignItems: 'center' },
+  obPlus: { backgroundColor: C.grbg, borderColor: 'rgba(34,197,94,0.4)' },
+  obBe: { backgroundColor: C.gbg, borderColor: C.gdim },
+  obMinus: { backgroundColor: C.rdbg, borderColor: 'rgba(239,68,68,0.4)' },
+  obTx: { color: C.mu2, fontSize: 13, fontWeight: '500', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  obTxPlus: { color: C.grn },
+  obTxBe: { color: C.gold },
+  obTxMinus: { color: C.red },
+  subBtn: { backgroundColor: C.sur2, borderWidth: 0.5, borderColor: C.b2, borderRadius: 8, paddingVertical: 12, alignItems: 'center', marginTop: 8 },
+  subBtnTx: { color: C.tx, fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', textTransform: 'uppercase', letterSpacing: 0.6 },
+  ti: { backgroundColor: C.sur, borderWidth: 0.5, borderColor: C.b1, borderRadius: 8, marginBottom: 6, overflow: 'hidden' },
+  tiMain: { flexDirection: 'row', alignItems: 'center', padding: 10, gap: 10 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  dotPlus: { backgroundColor: C.grn },
+  dotMinus: { backgroundColor: C.red },
+  dotBe: { backgroundColor: C.gold },
+  tiSym: { fontSize: 12, color: C.tx, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  tiDate: { fontSize: 10, color: C.mu2, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', marginTop: 1 },
+  tiAmt: { fontSize: 12, fontWeight: '500', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  tiBal: { fontSize: 10, color: C.mu, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  tiNote: { padding: 10, borderTopWidth: 0.5, borderTopColor: C.b1 },
+  tiNoteTx: { fontSize: 11, color: C.mu2, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', lineHeight: 16 },
+  empty: { alignItems: 'center', padding: 24 },
+  emptyTx: { color: C.mu, fontSize: 12, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', textAlign: 'center', lineHeight: 20 },
+  chHead: { backgroundColor: C.sur, borderWidth: 0.5, borderColor: C.b2, borderRadius: 12, padding: 16, marginBottom: 12 },
+  chBal: { fontSize: 28, fontWeight: '700', color: C.gold, letterSpacing: -1, marginVertical: 8 },
+  chCard: { backgroundColor: C.sur, borderWidth: 0.5, borderColor: 'rgba(34,197,94,0.2)', borderRadius: 10, padding: 14, marginBottom: 8 },
+  chCardDanger: { borderColor: 'rgba(239,68,68,0.4)', backgroundColor: C.rdbg },
+  chCardWarn: { borderColor: 'rgba(201,168,76,0.4)', backgroundColor: C.gbg },
+  chCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  chCardName: { fontSize: 12, fontWeight: '600', color: C.tx },
+  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, borderWidth: 0.5 },
+  badgeOk: { backgroundColor: C.grbg, borderColor: 'rgba(34,197,94,0.4)' },
+  badgeWarn: { backgroundColor: C.gbg, borderColor: C.gdim },
+  badgeBad: { backgroundColor: C.rdbg, borderColor: 'rgba(239,68,68,0.4)' },
+  badgeDone: { backgroundColor: C.blbg, borderColor: 'rgba(59,130,246,0.4)' },
+  badgeTx: { fontSize: 9, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', letterSpacing: 0.8 },
+  badgeTxOk: { color: C.grn },
+  badgeTxWarn: { color: C.gold },
+  badgeTxBad: { color: C.red },
+  badgeTxDone: { color: C.blue },
+  progTrack: { height: 3, backgroundColor: C.sur2, borderRadius: 99, marginBottom: 6 },
+  progFill: { height: 3, borderRadius: 99 },
+  chRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
+  chRowLabel: { fontSize: 11, color: C.mu, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  chRowVal: { fontSize: 11, fontWeight: '500', color: C.tx, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  chEdit: { backgroundColor: 'transparent', borderWidth: 0.5, borderColor: C.b1, borderRadius: 8, paddingVertical: 9, alignItems: 'center', marginTop: 8 },
+  chEditTx: { color: C.mu2, fontSize: 10, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', textTransform: 'uppercase', letterSpacing: 0.6 },
+  clkRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  utct: { fontSize: 28, fontWeight: '700', color: C.gold, letterSpacing: -2, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  utcd: { fontSize: 10, color: C.mu, textTransform: 'uppercase', letterSpacing: 1, marginTop: 3, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  mktClosed: { backgroundColor: C.rdbg, borderWidth: 0.5, borderColor: 'rgba(239,68,68,0.3)', borderRadius: 8, padding: 10, marginBottom: 12, alignItems: 'center' },
+  mktClosedTx: { color: '#f87171', fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', letterSpacing: 0.4, textAlign: 'center' },
+  mktHol: { backgroundColor: C.gbg, borderWidth: 0.5, borderColor: C.gdim, borderRadius: 8, padding: 10, marginBottom: 12, alignItems: 'center' },
+  mktHolTx: { color: C.gold, fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', letterSpacing: 0.4 },
+  sessGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  sessCard: { width: '48%', backgroundColor: C.sur, borderWidth: 0.5, borderColor: C.b1, borderRadius: 10, padding: 11 },
+  sessCardOpen: { borderColor: 'rgba(201,168,76,0.35)', backgroundColor: 'rgba(201,168,76,0.04)' },
+  sessCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  sessName: { fontSize: 12, fontWeight: '600', color: C.tx },
+  sessTz: { fontSize: 9, color: C.mu2, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', marginBottom: 3 },
+  sessCd: { fontSize: 10, fontWeight: '500', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  sessCdOpen: { color: C.gold },
+  sessCdClosed: { color: C.mu },
+  overlap: { fontSize: 9, color: C.grn, marginTop: 2, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  wlAdd: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  wlAddBtn: { backgroundColor: C.gbg, borderWidth: 0.5, borderColor: C.gdim, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10, justifyContent: 'center' },
+  wlAddBtnTx: { color: C.gold, fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  wlItem: { backgroundColor: C.sur, borderWidth: 0.5, borderRadius: 8, padding: 12, marginBottom: 6 },
+  wlItemActive: { borderColor: 'rgba(34,197,94,0.3)' },
+  wlItemWatching: { borderColor: C.gdim },
+  wlTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  wlSym: { fontSize: 14, fontWeight: '600', color: C.tx, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  wlBtns: { flexDirection: 'row', gap: 4 },
+  wlBtn: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, borderWidth: 0.5, borderColor: C.b1 },
+  wlBtnAct: { backgroundColor: C.grbg, borderColor: 'rgba(34,197,94,0.4)' },
+  wlBtnWat: { backgroundColor: C.gbg, borderColor: C.gdim },
+  wlBtnTx: { fontSize: 9, color: C.mu, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  wlBtnTxAct: { color: C.grn },
+  wlBtnTxWat: { color: C.gold },
+  wlNoteInput: { fontSize: 11, color: C.mu2, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', borderTopWidth: 0.5, borderTopColor: C.b1, paddingTop: 8, marginTop: 4 },
+  selModal: { backgroundColor: C.sur, borderWidth: 0.5, borderColor: C.b2, borderRadius: 12, marginBottom: 8 },
+  selOption: { paddingVertical: 12, paddingHorizontal: 14, borderBottomWidth: 0.5, borderBottomColor: C.b1 },
+  selOptionTx: { color: C.tx, fontSize: 13, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  selSelected: { backgroundColor: C.gbg },
+  selSelectedTx: { color: C.gold },
+});
+
+function Selector({ options, value, onChange, label }) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find(o => o.key === value && !o.isHeader);
+  return (
+    <View style={s.sec}>
+      <TouchableOpacity style={s.card} onPress={() => setOpen(!open)}>
+        <Text style={s.cardLabel}>{label}</Text>
+        <Text style={[s.cardInput, { color: C.gold }]}>{selected?.label || 'Select...'} {open ? '▲' : '▼'}</Text>
+      </TouchableOpacity>
+      {open && (
+        <ScrollView style={[s.selModal, { maxHeight: 280 }]} nestedScrollEnabled>
+          {options.map(o => o.isHeader ? (
+            <View key={o.key} style={{ paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4, borderBottomWidth: 0.5, borderBottomColor: C.b1 }}>
+              <Text style={{ fontSize: 9, color: C.gold, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', textTransform: 'uppercase', letterSpacing: 1.5 }}>{o.label}</Text>
+            </View>
+          ) : (
+            <TouchableOpacity key={o.key} style={[s.selOption, o.key === value && s.selSelected]} onPress={() => { onChange(o.key); setOpen(false); }}>
+              <Text style={[s.selOptionTx, o.key === value && s.selSelectedTx]}>{o.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
+
+function Badge({ type, text }) {
+  const styles = { ok: [s.badgeOk, s.badgeTxOk], warn: [s.badgeWarn, s.badgeTxWarn], bad: [s.badgeBad, s.badgeTxBad], done: [s.badgeDone, s.badgeTxDone] };
+  const [bg, tx] = styles[type] || styles.ok;
+  return <View style={[s.badge, bg]}><Text style={[s.badgeTx, tx]}>{text}</Text></View>;
+}
+
+function CalcTab({ state, setState, onLogPress }) {
+  const [instrKey, setInstrKey] = useState('XAUUSD');
+  const [dir, setDir] = useState('long');
+  const [bal, setBal] = useState(state.bal.toFixed(2));
+  const [rpct, setRpct] = useState('1');
+  const [ent, setEnt] = useState('');
+  const [sl, setSl] = useState('');
+  const [tp, setTp] = useState('');
+  const [showTrade2, setShowTrade2] = useState(false);
+  const [instrKey2, setInstrKey2] = useState('GBPUSD');
+  const [dir2, setDir2] = useState('long');
+  const [ent2, setEnt2] = useState('');
+  const [sl2, setSl2] = useState('');
+  const [tp2, setTp2] = useState('');
+  const cfg = INST[instrKey];
+  const balN = parseFloat(bal) || 0;
+  const rpctN = parseFloat(rpct) || 1;
+  const entN = parseFloat(ent) || 0;
+  const slN = parseFloat(sl) || 0;
+  const tpN = parseFloat(tp) || 0;
+  const [jpyRate, setJpyRate] = useState('');
+  const dr = balN * (rpctN / 100);
+  const sld = Math.abs(entN - slN);
+  const tpd = tpN > 0 ? Math.abs(tpN - entN) : 0;
+  const vL = dir === 'long' && slN < entN && (tpN === 0 || tpN > entN);
+  const vS = dir === 'short' && slN > entN && (tpN === 0 || tpN < entN);
+  const isJpyCross = cfg.jpyCross === true;
+  const isJpyDirect = cfg.jpyDirect === true;
+  const isJpyPair = isJpyCross || isJpyDirect;
+  const jpyRateN = parseFloat(jpyRate) || 0;
+  // For JPY crosses (GBP/JPY etc): pip value = (0.01 / USDJPY) * 100,000
+  // For USD/JPY direct: pip value = (0.01 / price) * 100,000 — use entN as the price
+  const pipValuePerLot = isJpyCross && jpyRateN > 0
+    ? (0.01 / jpyRateN) * 100000
+    : isJpyDirect && entN > 0
+    ? (0.01 / entN) * 100000
+    : cfg.m;
+  const valid = balN > 0 && entN > 0 && slN > 0 && sld > 0 && (vL || vS) && (!isJpyCross || jpyRateN > 0);
+  const lots = valid ? dr / (sld * pipValuePerLot) : 0;
+  const rr = valid && tpd > 0 ? tpd / sld : 0;
+  const gain = lots * tpd * cfg.m;
+  const bw = rr > 0 ? Math.min((rr / (rr + 1)) * 100, 97) : 0;
+
+  // Trade 2 calculations
+  const cfg2 = INST[instrKey2] || INST['GBPUSD'];
+  const entN2 = parseFloat(ent2) || 0;
+  const slN2 = parseFloat(sl2) || 0;
+  const tpN2 = parseFloat(tp2) || 0;
+  const sld2 = Math.abs(entN2 - slN2);
+  const tpd2 = tpN2 > 0 ? Math.abs(tpN2 - entN2) : 0;
+  const vL2 = dir2 === 'long' && slN2 < entN2 && (tpN2 === 0 || tpN2 > entN2);
+  const vS2 = dir2 === 'short' && slN2 > entN2 && (tpN2 === 0 || tpN2 < entN2);
+  const valid2 = balN > 0 && entN2 > 0 && slN2 > 0 && sld2 > 0 && (vL2 || vS2);
+  const lots2 = valid2 ? dr / (sld2 * cfg2.m) : 0;
+  const rr2 = valid2 && tpd2 > 0 ? tpd2 / sld2 : 0;
+
+  // Correlation check
+  const getBase = (key) => {
+    const l = INST[key]?.l || '';
+    return l.split('/')[0];
+  };
+  const base1 = getBase(instrKey);
+  const base2 = getBase(instrKey2);
+  const correlated = showTrade2 && valid && valid2 && base1 === base2;
+  const totalRisk = correlated ? dr * 2 : dr;
+
+  const warnMsg = isJpyCross && jpyRateN === 0 && entN > 0 ? 'Enter current USD/JPY rate above to calculate lot size accurately.' : entN > 0 && slN > 0 && sld === 0 ? 'Entry and SL cannot be the same.' : entN > 0 && slN > 0 && !vL && !vS ? (dir === 'long' ? 'Long: SL below entry, TP above entry.' : 'Short: SL above entry, TP below entry.') : '';
+  const [saved, setSaved] = useState(false);
+  const saveBalance = () => {
+    const n = parseFloat(bal);
+    if (!n || n <= 0) { Alert.alert('Enter a valid balance first.'); return; }
+    setState(prev => ({ ...prev, bal: n }));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+  return (
+    <ScrollView style={s.scroll} contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled">
+      <Selector options={INST_LABELS} value={instrKey} onChange={setInstrKey} label="Instrument" />
+      <View style={s.note}><Text style={s.noteTx}>{cfg.n}</Text></View>
+      {isJpyPair && (
+        <View style={[s.warn, { borderColor: C.gdim, backgroundColor: 'rgba(201,168,76,0.08)' }]}>
+          <Text style={[s.warnTx, { color: C.gold }]}>JPY pair detected — enter current {isJpyDirect ? 'USD/JPY price' : 'USD/JPY rate'} for accurate lot size</Text>
+          <TextInput
+            style={[s.cardInput, { marginTop: 8, color: C.tx, borderWidth: 0.5, borderColor: C.gdim, borderRadius: 6, padding: 6 }]}
+            value={jpyRate}
+            onChangeText={setJpyRate}
+            keyboardType="decimal-pad"
+            placeholder={isJpyDirect ? "e.g. 158.86" : "e.g. 158.86"}
+            placeholderTextColor={C.mu}
+          />
+        </View>
+      )}
+      <View style={s.sec}>
+        <Text style={s.sh}>Account</Text>
+        <View style={s.row2}>
+          <View style={[s.card, s.half]}>
+            <Text style={s.cardLabel}>Balance ($)</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TextInput style={[s.cardInput, { flex: 1 }]} value={bal} onChangeText={(v) => { setBal(v); setSaved(false); }} keyboardType="decimal-pad" placeholderTextColor={C.mu} />
+              <TouchableOpacity onPress={saveBalance} style={{ backgroundColor: saved ? 'rgba(34,197,94,0.2)' : C.gbg, borderWidth: 0.5, borderColor: saved ? 'rgba(34,197,94,0.5)' : C.gdim, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                <Text style={{ color: saved ? C.grn : C.gold, fontSize: 10, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>{saved ? 'SAVED' : 'SAVE'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={[s.card, s.half]}><Text style={s.cardLabel}>Risk %</Text><TextInput style={s.cardInput} value={rpct} onChangeText={setRpct} keyboardType="decimal-pad" placeholderTextColor={C.mu} /></View>
+        </View>
+      </View>
+      <View style={s.sec}>
+        <Text style={s.sh}>Direction</Text>
+        <View style={s.dirRow}>
+          <TouchableOpacity style={[s.dirBtn, dir === 'long' && s.dirBtnLng]} onPress={() => setDir('long')}><Text style={[s.dirTx, dir === 'long' && s.dirTxLng]}>▲ Long</Text></TouchableOpacity>
+          <TouchableOpacity style={[s.dirBtn, dir === 'short' && s.dirBtnSht]} onPress={() => setDir('short')}><Text style={[s.dirTx, dir === 'short' && s.dirTxSht]}>▼ Short</Text></TouchableOpacity>
+        </View>
+      </View>
+      <View style={s.sec}>
+        <Text style={s.sh}>Trade Levels</Text>
+        <View style={s.row2}>
+          <View style={[s.card, s.half]}><Text style={s.cardLabel}>Entry</Text><TextInput style={s.cardInput} value={ent} onChangeText={setEnt} keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor={C.mu} /></View>
+          <View style={[s.card, s.half]}><Text style={s.cardLabel}>Stop Loss</Text><TextInput style={s.cardInput} value={sl} onChangeText={setSl} keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor={C.mu} /></View>
+        </View>
+        <View style={s.card}><Text style={s.cardLabel}>Take Profit (optional)</Text><TextInput style={s.cardInput} value={tp} onChangeText={setTp} keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor={C.mu} /></View>
+      </View>
+      {warnMsg ? <View style={s.warn}><Text style={s.warnTx}>{warnMsg}</Text></View> : null}
+      <View style={s.resBox}>
+        <View style={s.resMain}>
+          <View style={s.resBlock}><Text style={s.resLabel}>$ at risk</Text><Text style={s.resVal}>{balN > 0 ? fm(dr) : '-'}</Text><Text style={s.resSub}>{balN > 0 ? rpctN + '% of ' + fm(balN) : 'enter balance'}</Text></View>
+          <View style={s.resBlock}><Text style={s.resLabel}>Lot size</Text><Text style={[s.resVal, s.resValWh]}>{valid ? (lots < 0.01 ? lots.toFixed(4) : lots.toFixed(2)) : '-'}</Text><Text style={s.resSub}>type into GooeyPro</Text></View>
+        </View>
+        <View style={s.resRow}>
+          <View style={s.resItem}><Text style={s.miniLabel}>SL dist</Text><Text style={s.miniVal}>{valid ? sld.toFixed(sld < 1 ? 5 : 1) + ' pts' : '-'}</Text></View>
+          <View style={s.resItem}><Text style={s.miniLabel}>TP dist</Text><Text style={s.miniVal}>{valid && tpd > 0 ? tpd.toFixed(tpd < 1 ? 5 : 1) + ' pts' : '-'}</Text></View>
+          <View style={s.resItem}><Text style={s.miniLabel}>Max gain</Text><Text style={[s.miniVal, s.miniPos]}>{valid && tpd > 0 ? '+' + fm(gain) : '-'}</Text></View>
+        </View>
+        <View style={s.rrSec}>
+          <View style={s.rrRow}><Text style={s.rrLabel}>Risk : Reward</Text><Text style={s.rrVal}>{rr > 0 ? '1 : ' + rr.toFixed(1) : '-'}</Text></View>
+          <View style={s.rrTrack}><View style={[s.rrFill, { width: bw + '%' }]} /></View>
+        </View>
+      </View>
+      <TouchableOpacity style={s.logBtn} onPress={() => onLogPress(cfg.l, dr, instrKey)}><Text style={s.logBtnTx}>+ Log this trade to tracker</Text></TouchableOpacity>
+      <View style={s.row2}>
+        <TouchableOpacity style={s.ghost} onPress={() => { setEnt(''); setSl(''); setTp(''); }}><Text style={s.ghostTx}>Clear levels</Text></TouchableOpacity>
+        <TouchableOpacity style={[s.ghost, { marginLeft: 8 }]} onPress={() => setShowTrade2(!showTrade2)}>
+          <Text style={s.ghostTx}>{showTrade2 ? 'Remove Trade 2' : '+ Add Trade 2'}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {showTrade2 && (
+        <View style={{ marginTop: 8, backgroundColor: C.sur, borderWidth: 0.5, borderColor: C.b2, borderRadius: 12, padding: 14, marginBottom: 8 }}>
+          <Text style={[s.sh, { marginBottom: 10 }]}>Trade 2</Text>
+          {correlated && (
+            <View style={{ backgroundColor: 'rgba(201,168,76,0.15)', borderWidth: 0.5, borderColor: C.gdim, borderRadius: 8, padding: 10, marginBottom: 10 }}>
+              <Text style={{ color: C.gold, fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+                CORRELATED EXPOSURE — Both trades carry {base1}. Combined risk: {fm(totalRisk)} ({(rpctN * 2).toFixed(1)}% of balance)
+              </Text>
+            </View>
+          )}
+          <Selector options={INST_LABELS} value={instrKey2} onChange={setInstrKey2} label="Instrument 2" />
+          <View style={s.note}><Text style={s.noteTx}>{cfg2.n}</Text></View>
+          <View style={s.dirRow}>
+            <TouchableOpacity style={[s.dirBtn, dir2 === 'long' && s.dirBtnLng]} onPress={() => setDir2('long')}><Text style={[s.dirTx, dir2 === 'long' && s.dirTxLng]}>▲ Long</Text></TouchableOpacity>
+            <TouchableOpacity style={[s.dirBtn, dir2 === 'short' && s.dirBtnSht]} onPress={() => setDir2('short')}><Text style={[s.dirTx, dir2 === 'short' && s.dirTxSht]}>▼ Short</Text></TouchableOpacity>
+          </View>
+          <View style={s.row2}>
+            <View style={[s.card, s.half]}><Text style={s.cardLabel}>Entry</Text><TextInput style={s.cardInput} value={ent2} onChangeText={setEnt2} keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor={C.mu} /></View>
+            <View style={[s.card, s.half]}><Text style={s.cardLabel}>Stop Loss</Text><TextInput style={s.cardInput} value={sl2} onChangeText={setSl2} keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor={C.mu} /></View>
+          </View>
+          <View style={s.card}><Text style={s.cardLabel}>Take Profit (optional)</Text><TextInput style={s.cardInput} value={tp2} onChangeText={setTp2} keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor={C.mu} /></View>
+          {valid2 && (
+            <View style={[s.resBox, { marginTop: 8 }]}>
+              <View style={s.resMain}>
+                <View style={s.resBlock}><Text style={s.resLabel}>$ at risk</Text><Text style={s.resVal}>{fm(dr)}</Text></View>
+                <View style={s.resBlock}><Text style={s.resLabel}>Lot size</Text><Text style={[s.resVal, s.resValWh]}>{lots2 < 0.01 ? lots2.toFixed(4) : lots2.toFixed(2)}</Text></View>
+              </View>
+              {rr2 > 0 && (
+                <View style={s.rrSec}>
+                  <View style={s.rrRow}><Text style={s.rrLabel}>Risk : Reward</Text><Text style={s.rrVal}>1 : {rr2.toFixed(1)}</Text></View>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+      )}
+
+      {valid && lots > 0 && (
+        <PartialCloseCalc lots={lots} dr={dr} cfg={cfg} entN={entN} slN={slN} />
+      )}
+    </ScrollView>
+  );
+}
+
+function PartialCloseCalc({ lots, dr, cfg, entN, slN }) {
+  const [pct, setPct] = useState('50');
+  const [curPrice, setCurPrice] = useState('');
+  const pctN = Math.min(100, Math.max(0, parseFloat(pct) || 0));
+  const curN = parseFloat(curPrice) || 0;
+  const sld = Math.abs(entN - slN);
+  const priceDiff = curN > 0 && entN > 0 ? Math.abs(curN - entN) : 0;
+  const rrAchieved = sld > 0 && priceDiff > 0 ? priceDiff / sld : 0;
+  const totalGain = curN > 0 ? priceDiff * lots * cfg.m : 0;
+  const closeLots = lots * (pctN / 100);
+  const remaining = lots - closeLots;
+  const dollarsBanked = curN > 0 ? priceDiff * closeLots * cfg.m : dr * (pctN / 100);
+  const rrBanked = rrAchieved > 0 ? rrAchieved * (pctN / 100) : pctN / 100;
+  const ROWS = [10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90];
+  const highlight = ROWS.includes(pctN) ? pctN : null;
+  const hasCur = curN > 0 && entN > 0;
+  return (
+    <View style={{ marginTop: 8, marginBottom: 8 }}>
+      <Text style={s.sh}>Partial Close Calculator</Text>
+      <View style={s.row2}>
+        <View style={[s.card, s.half]}>
+          <Text style={s.cardLabel}>Current price</Text>
+          <TextInput style={s.cardInput} value={curPrice} onChangeText={setCurPrice} keyboardType="decimal-pad" placeholder={entN > 0 ? entN.toFixed(2) : '0.00'} placeholderTextColor={C.mu} />
+        </View>
+        <View style={[s.card, s.half]}>
+          <Text style={s.cardLabel}>% to close</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TextInput style={[s.cardInput, { flex: 1 }]} value={pct} onChangeText={setPct} keyboardType="decimal-pad" placeholder="50" placeholderTextColor={C.mu} />
+            <Text style={{ color: C.mu2, fontSize: 13, marginLeft: 4 }}>%</Text>
+          </View>
+        </View>
+      </View>
+      {hasCur && rrAchieved > 0 && (
+        <View style={{ backgroundColor: C.gbg, borderWidth: 0.5, borderColor: C.gdim, borderRadius: 8, padding: 10, marginBottom: 8, flexDirection: 'row', justifyContent: 'space-between' }}>
+          <Text style={{ color: C.gold, fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>Current RR achieved</Text>
+          <Text style={{ color: C.gold, fontSize: 13, fontWeight: '700', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>1:{rrAchieved.toFixed(2)}</Text>
+        </View>
+      )}
+      {pctN > 0 && pctN <= 100 && (
+        <View style={[s.resBox, { marginTop: 0, marginBottom: 8 }]}>
+          <View style={s.resMain}>
+            <View style={s.resBlock}>
+              <Text style={s.resLabel}>Close lots</Text>
+              <Text style={[s.resVal, { fontSize: 20 }]}>{closeLots < 0.001 ? closeLots.toFixed(4) : closeLots.toFixed(3)}</Text>
+            </View>
+            <View style={s.resBlock}>
+              <Text style={s.resLabel}>Remaining</Text>
+              <Text style={[s.resVal, s.resValWh, { fontSize: 20 }]}>{remaining < 0.001 ? remaining.toFixed(4) : remaining.toFixed(3)}</Text>
+            </View>
+          </View>
+          <View style={s.resRow}>
+            <View style={s.resItem}><Text style={s.miniLabel}>RR banked</Text><Text style={[s.miniVal, { color: C.grn }]}>{rrBanked.toFixed(2)}R</Text></View>
+            <View style={s.resItem}><Text style={s.miniLabel}>$ banked</Text><Text style={[s.miniVal, { color: C.grn }]}>+{fm(dollarsBanked)}</Text></View>
+            <View style={s.resItem}><Text style={s.miniLabel}>Risk left</Text><Text style={[s.miniVal, { color: C.red }]}>{fm(dr - (hasCur ? 0 : dr * (pctN/100)))}</Text></View>
+          </View>
+        </View>
+      )}
+      <View style={{ backgroundColor: C.sur, borderWidth: 0.5, borderColor: C.b1, borderRadius: 10, overflow: 'hidden', marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: C.b1 }}>
+          <Text style={[s.miniLabel, { flex: 1 }]}>Close %</Text>
+          <Text style={[s.miniLabel, { flex: 1 }]}>Lots</Text>
+          <Text style={[s.miniLabel, { flex: 1 }]}>{hasCur ? '$ Banked' : 'RR'}</Text>
+          <Text style={[s.miniLabel, { flex: 1 }]}>{hasCur ? 'Remaining' : '$ at Risk'}</Text>
+        </View>
+        {ROWS.map(r => {
+          const isHighlight = r === highlight;
+          const rLots = lots * r/100;
+          const rBanked = hasCur ? priceDiff * rLots * cfg.m : null;
+          const rRem = hasCur ? lots - rLots : null;
+          return (
+            <View key={r} style={{ flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 7, borderBottomWidth: 0.5, borderBottomColor: C.b1, backgroundColor: isHighlight ? C.gbg : 'transparent' }}>
+              <Text style={[s.miniVal, { flex: 1, color: isHighlight ? C.gold : C.tx }]}>{r}%</Text>
+              <Text style={[s.miniVal, { flex: 1, color: isHighlight ? C.gold : C.tx }]}>{rLots.toFixed(3)}</Text>
+              <Text style={[s.miniVal, { flex: 1, color: C.grn }]}>{hasCur ? '+' + fm(rBanked) : (r/100).toFixed(2) + 'R'}</Text>
+              <Text style={[s.miniVal, { flex: 1, color: C.mu2 }]}>{hasCur ? rRem.toFixed(3) + ' lots' : '+' + fm(dr * r/100)}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function TrackerTab({ state, setState, prefill, setPrefill }) {
+  const [outcome, setOutcome] = useState(null);
+  const [sym, setSym] = useState('XAU/USD');
+  const [pnl, setPnl] = useState('');
+  const [note, setNote] = useState('');
+  const [expanded, setExpanded] = useState({});
+  const [symOpen, setSymOpen] = useState(false);
+  const net = state.bal - state.start;
+  const pct = state.start > 0 ? ((net / state.start) * 100).toFixed(2) : '0.00';
+  const trades = state.trades;
+  const plus = trades.filter(t => t.out === 'plus').length;
+  const rate = trades.length > 0 ? Math.round(plus / trades.length * 100) + '%' : '-';
+  const tot = trades.reduce((s, t) => s + t.pnl, 0);
+  const symOptions = ['XAU/USD','XAG/USD','BTC/USD','ETH/USD','XRP/USD','ADA/USD','US30','GER30','NAS100','OIL','EUR/USD','GBP/USD','GBP/JPY','EUR/GBP','EUR/JPY','GBP/NZD','USD/JPY','AUD/JPY','CAD/JPY','AUD/USD','USD/CAD','USD/CHF','TSLA','NVDA','SHOP','TSN','V','AAP','ABCB','LMT'];
+
+  useEffect(() => {
+    if (prefill) {
+      setSym(prefill.sym);
+      setPnl(prefill.dr.toFixed(2));
+      setPrefill(null);
+    }
+  }, [prefill]);
+
+  const doLog = () => {
+    let p = parseFloat(pnl) || 0;
+    if (outcome === 'minus') p = -Math.abs(p);
+    else if (outcome === 'be') p = 0;
+    else if (outcome === 'plus') p = Math.abs(p);
+    const newBal = state.bal + p;
+    setState(prev => ({ ...prev, bal: newBal, trades: [{ sym, out: outcome, pnl: p, bal: newBal, note, ts: Date.now() }, ...prev.trades] }));
+    setPnl(''); setNote(''); setOutcome(null);
+  };
+  return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={180}>
+    <ScrollView style={s.scroll} contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled">
+      <View style={s.bdis}>
+        <Text style={[s.sh, { marginBottom: 4 }]}>Current Balance</Text>
+        <Text style={s.bbig}>{fm(state.bal)}</Text>
+        {net !== 0 && <Text style={[s.bch, { color: net >= 0 ? C.grn : C.red }]}>{fms(net)} ({pct}%) since start</Text>}
+        <Text style={s.bsub}>Starting: {fm(state.start)}</Text>
+      </View>
+      <View style={s.s3}>
+        <View style={s.statCard}><Text style={s.statLabel}>Trades</Text><Text style={s.statVal}>{trades.length}</Text></View>
+        <View style={s.statCard}><Text style={s.statLabel}>+RR rate</Text><Text style={s.statVal}>{rate}</Text></View>
+        <View style={s.statCard}><Text style={s.statLabel}>Net P&L</Text><Text style={[s.statVal, tot > 0 ? s.statPos : tot < 0 ? s.statNeg : {}]}>{trades.length > 0 ? fms(tot) : '-'}</Text></View>
+      </View>
+      <View style={s.lf}>
+        <Text style={[s.sh, { marginBottom: 10 }]}>Log a trade</Text>
+        <View style={s.o3}>
+          <TouchableOpacity style={[s.ob, outcome === 'plus' && s.obPlus]} onPress={() => setOutcome('plus')}><Text style={[s.obTx, outcome === 'plus' && s.obTxPlus]}>+RR</Text></TouchableOpacity>
+          <TouchableOpacity style={[s.ob, outcome === 'be' && s.obBe]} onPress={() => setOutcome('be')}><Text style={[s.obTx, outcome === 'be' && s.obTxBe]}>BE</Text></TouchableOpacity>
+          <TouchableOpacity style={[s.ob, outcome === 'minus' && s.obMinus]} onPress={() => setOutcome('minus')}><Text style={[s.obTx, outcome === 'minus' && s.obTxMinus]}>-1</Text></TouchableOpacity>
+        </View>
+        <TouchableOpacity style={s.card} onPress={() => setSymOpen(!symOpen)}>
+          <Text style={s.cardLabel}>Instrument</Text>
+          <Text style={[s.cardInput, { color: C.gold }]}>{sym} {symOpen ? '▲' : '▼'}</Text>
+        </TouchableOpacity>
+        {symOpen && (
+          <ScrollView style={[s.selModal, { maxHeight: 180 }]} nestedScrollEnabled>
+            {symOptions.map(o => (
+              <TouchableOpacity key={o} style={[s.selOption, o === sym && s.selSelected]} onPress={() => { setSym(o); setSymOpen(false); }}>
+                <Text style={[s.selOptionTx, o === sym && s.selSelectedTx]}>{o}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+        <View style={s.card}><Text style={s.cardLabel}>P&L ($)</Text><TextInput style={s.cardInput} value={pnl} onChangeText={setPnl} keyboardType="decimal-pad" placeholder="249.00" placeholderTextColor={C.mu} /></View>
+        <View style={s.card}><Text style={s.cardLabel}>Note (optional)</Text><TextInput style={[s.cardInput, { minHeight: 60, textAlignVertical: 'top' }]} value={note} onChangeText={setNote} placeholder="model, setup, observations..." placeholderTextColor={C.mu} multiline scrollEnabled={false} /></View>
+        <TouchableOpacity style={s.subBtn} onPress={doLog}><Text style={s.subBtnTx}>Record Trade</Text></TouchableOpacity>
+      </View>
+      <View style={[s.row2, { marginBottom: 14 }]}>
+        <TouchableOpacity style={s.ghost} onPress={() => { Alert.prompt('Set start balance', 'Enter starting balance ($):', v => { const n = parseFloat(v); if (!isNaN(n) && n > 0) setState(prev => ({ ...prev, start: n, bal: n })); }, 'plain-text', String(state.start)); }}><Text style={s.ghostTx}>Set start balance</Text></TouchableOpacity>
+        <TouchableOpacity style={[s.ghost, { marginLeft: 8 }]} onPress={() => Alert.alert('Clear history?', 'This cannot be undone.', [{ text: 'Cancel' }, { text: 'Clear', style: 'destructive', onPress: () => setState(prev => ({ ...prev, trades: [], bal: prev.start })) }])}><Text style={s.ghostTx}>Clear history</Text></TouchableOpacity>
+      </View>
+      <Text style={[s.sh, { marginBottom: 4 }]}>Trade History <Text style={{ fontSize: 9 }}>tap to expand</Text></Text>
+      {trades.length === 0 ? <View style={s.empty}><Text style={s.emptyTx}>No trades yet.{'\n'}Log your first trade above.</Text></View> :
+        trades.map((tr, idx) => {
+          const d = new Date(tr.ts);
+          const ds = (d.getMonth()+1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+          const amtColor = tr.out === 'plus' ? C.grn : tr.out === 'minus' ? C.red : tr.out === 'be' ? C.gold : C.mu2;
+          const amt = tr.out === 'be' ? 'BE' : tr.out === 'plus' ? '+' + fm(Math.abs(tr.pnl)) : tr.out === 'minus' ? '-' + fm(Math.abs(tr.pnl)) : fm(Math.abs(tr.pnl));
+          const label = tr.out === 'plus' ? '+RR' : tr.out === 'be' ? 'BE' : tr.out === 'minus' ? '-1' : 'pending';
+          return (
+            <TouchableOpacity key={idx} style={s.ti} onPress={() => setExpanded(prev => ({ ...prev, [idx]: !prev[idx] }))}>
+              <View style={s.tiMain}>
+                <View style={[s.dot, tr.out === 'plus' ? s.dotPlus : tr.out === 'minus' ? s.dotMinus : tr.out === 'be' ? s.dotBe : { backgroundColor: C.mu }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={s.tiSym}>{tr.sym} <Text style={{ color: C.mu2, fontSize: 10 }}>{label}</Text></Text>
+                  <Text style={s.tiDate}>{ds}{tr.note ? ' · has note' : ''}</Text>
+                </View>
+                <Text style={[s.tiAmt, { color: amtColor }]}>{amt}</Text>
+                <Text style={[s.tiBal, { marginLeft: 8 }]}>{fm(tr.bal)}</Text>
+              </View>
+              {expanded[idx] && tr.note ? <View style={s.tiNote}><Text style={s.tiNoteTx}>{tr.note}</Text></View> : null}
+            </TouchableOpacity>
+          );
+        })
+      }
+    </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+function ChallengeTab({ state, setState }) {
+  const bal = state.bal;
+  const pp = Math.max(0, Math.min(((bal - CH.startBal) / (CH.profitTarget - CH.startBal)) * 100, 100));
+  const pdone = bal >= CH.profitTarget;
+  const ds = state.dailyStart || CH.startBal;
+  const maxD = ds - CH.dailyFloor;
+  const dailyLoss = Math.max(0, ds - bal);
+  const dp = maxD > 0 ? Math.min((dailyLoss / maxD) * 100, 100) : 0;
+  const droom = Math.max(0, bal - CH.dailyFloor);
+  const dbreach = bal <= CH.dailyFloor, dwarn = dp > 70;
+  const ddLoss = Math.max(0, CH.startBal - bal);
+  const ddMax = CH.startBal - CH.ddFloor;
+  const ddp = ddMax > 0 ? Math.min((ddLoss / ddMax) * 100, 100) : 0;
+  const ddroom = Math.max(0, bal - CH.ddFloor);
+  const ddbreach = bal <= CH.ddFloor, ddwarn = ddp > 70;
+  const overallType = pdone ? 'done' : (dbreach || ddbreach) ? 'bad' : (dwarn || ddwarn) ? 'warn' : 'ok';
+  const overallText = pdone ? 'PASSED' : (dbreach || ddbreach) ? 'BREACHED' : (dwarn || ddwarn) ? 'WARNING' : 'IN PROGRESS';
+  return (
+    <ScrollView style={s.scroll} contentContainerStyle={s.pad}>
+      <View style={s.chHead}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View><Text style={{ fontSize: 13, fontWeight: '600', color: C.tx }}>MentFunding Challenge</Text><Text style={{ fontSize: 10, color: C.mu, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', marginTop: 2 }}>25K Account - No time limit</Text></View>
+          <Badge type={overallType} text={overallText} />
+        </View>
+        <Text style={s.chBal}>{fm(bal)}</Text>
+        <Text style={{ fontSize: 10, color: C.mu, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>synced from tracker</Text>
+      </View>
+      <View style={[s.chCard, pdone && { borderColor: 'rgba(59,130,246,0.4)' }]}>
+        <View style={s.chCardTop}><Text style={s.chCardName}>Profit Target</Text><Badge type={pdone ? 'done' : 'ok'} text={pdone ? 'COMPLETE' : 'IN PROGRESS'} /></View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+          <Text style={{ fontSize: 10, color: C.mu, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>{pp.toFixed(1)}% complete</Text>
+          <Text style={{ fontSize: 10, color: C.mu, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>{pdone ? 'TARGET HIT' : fm(CH.profitTarget - bal) + ' to go'}</Text>
+        </View>
+        <View style={s.progTrack}><View style={[s.progFill, { width: pp + '%', backgroundColor: pdone ? C.grn : C.gold }]} /></View>
+        <View style={s.chRow}><Text style={s.chRowLabel}>Target</Text><Text style={s.chRowVal}>$27,500.00</Text></View>
+        <View style={s.chRow}><Text style={s.chRowLabel}>Current balance</Text><Text style={s.chRowVal}>{fm(bal)}</Text></View>
+      </View>
+      <View style={[s.chCard, dbreach ? s.chCardDanger : dwarn ? s.chCardWarn : {}]}>
+        <View style={s.chCardTop}><Text style={s.chCardName}>Daily Loss Limit</Text><Badge type={dbreach ? 'bad' : dwarn ? 'warn' : 'ok'} text={dbreach ? 'BREACHED' : dwarn ? 'WARNING' : 'SAFE'} /></View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+          <Text style={{ fontSize: 10, color: C.mu, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>{dp.toFixed(1)}% used</Text>
+          <Text style={{ fontSize: 10, color: C.mu, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>{fm(droom)} remaining</Text>
+        </View>
+        <View style={s.progTrack}><View style={[s.progFill, { width: dp + '%', backgroundColor: dbreach ? C.red : dwarn ? C.gold : C.grn }]} /></View>
+        <View style={s.chRow}><Text style={s.chRowLabel}>Daily floor</Text><Text style={s.chRowVal}>$23,683.50</Text></View>
+        <View style={s.chRow}><Text style={s.chRowLabel}>Day start balance</Text><Text style={s.chRowVal}>{fm(ds)}</Text></View>
+        <View style={s.chRow}><Text style={s.chRowLabel}>Max loss today</Text><Text style={s.chRowVal}>{fm(maxD)}</Text></View>
+        <View style={s.chRow}><Text style={s.chRowLabel}>Remaining today</Text><Text style={s.chRowVal}>{fm(droom)}</Text></View>
+        <TouchableOpacity style={s.chEdit} onPress={() => { setState(prev => ({ ...prev, dailyStart: prev.bal })); Alert.alert('Daily start reset to ' + fm(bal) + '. Do this each morning before you trade.'); }}>
+          <Text style={s.chEditTx}>Reset daily start (each morning)</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={[s.chCard, ddbreach ? s.chCardDanger : ddwarn ? s.chCardWarn : {}]}>
+        <View style={s.chCardTop}><Text style={s.chCardName}>Max Total Loss</Text><Badge type={ddbreach ? 'bad' : ddwarn ? 'warn' : 'ok'} text={ddbreach ? 'BREACHED' : ddwarn ? 'WARNING' : 'SAFE'} /></View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+          <Text style={{ fontSize: 10, color: C.mu, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>{ddp.toFixed(1)}% used</Text>
+          <Text style={{ fontSize: 10, color: C.mu, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>{fm(ddroom)} remaining</Text>
+        </View>
+        <View style={s.progTrack}><View style={[s.progFill, { width: ddp + '%', backgroundColor: ddbreach ? C.red : ddwarn ? C.gold : C.grn }]} /></View>
+        <View style={s.chRow}><Text style={s.chRowLabel}>Hard floor</Text><Text style={s.chRowVal}>$23,500.00</Text></View>
+        <View style={s.chRow}><Text style={s.chRowLabel}>Max total loss</Text><Text style={s.chRowVal}>$1,430.00</Text></View>
+        <View style={s.chRow}><Text style={s.chRowLabel}>Current balance</Text><Text style={s.chRowVal}>{fm(bal)}</Text></View>
+        <View style={s.chRow}><Text style={s.chRowLabel}>Buffer remaining</Text><Text style={s.chRowVal}>{fm(ddroom)}</Text></View>
+      </View>
+    </ScrollView>
+  );
+}
+
+function SessionsTab() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
+  const h = now.getUTCHours(), m = now.getUTCMinutes(), sec = now.getUTCSeconds();
+  const weekend = isWeekend(now), holiday = isHoliday(now), mktOpen = !weekend && !holiday;
+  const openArr = SESS.map(ss => mktOpen && sessOpen(ss, h, m));
+  const cnt = openArr.filter(Boolean).length;
+  const lonOpen = mktOpen && sessOpen(SESS[2], h, m);
+  const nyOpen = mktOpen && sessOpen(SESS[3], h, m);
+  const timeStr = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  const dateStr = WDY[now.getUTCDay()] + ' ' + now.getUTCDate() + ' ' + MON[now.getUTCMonth()] + ' ' + now.getUTCFullYear() + ' UTC';
+  const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const tzOffset = -now.getTimezoneOffset() / 60;
+  const tzLabel = tzOffset >= 0 ? 'UTC+' + tzOffset : 'UTC' + tzOffset;
+  function utcToLocal(utcHour) {
+    let local = utcHour + tzOffset;
+    if (local < 0) local += 24;
+    if (local >= 24) local -= 24;
+    return String(Math.floor(local)).padStart(2,'0') + ':' + String(Math.round((local % 1) * 60)).padStart(2,'0');
+  }
+  const stockOpenUTC = 14 * 60 + 30, stockCloseUTC = 21 * 60, nowMins = h * 60 + m;
+  const stockOpen = mktOpen && nowMins >= stockOpenUTC && nowMins < stockCloseUTC;
+  const stockMinsLeft = stockOpen ? stockCloseUTC - nowMins : nowMins < stockOpenUTC ? stockOpenUTC - nowMins : stockOpenUTC + (1440 - nowMins);
+  const MW = 340, MH = 160;
+  function ll(lon, lat) { return [(lon+180)/360*MW, (90-lat)/180*MH]; }
+  const CONT = [
+    [[-165,68],[-52,70],[-52,47],[-75,35],[-80,25],[-88,16],[-83,9],[-105,19],[-117,32],[-124,48],[-135,57]],
+    [[-50,76],[-42,84],[-18,77],[-23,60]],
+    [[-77,9],[-60,13],[-35,-5],[-40,-22],[-58,-35],[-68,-55],[-73,-52],[-76,-8],[-78,-1]],
+    [[-10,36],[-10,44],[-5,58],[14,71],[29,70],[40,65],[42,40],[22,37]],
+    [[-6,35],[13,33],[35,30],[38,15],[51,10],[40,-10],[20,-35],[17,-29],[12,-5],[9,3],[3,5],[-17,14],[-13,28]],
+    [[42,40],[48,42],[60,67],[104,72],[168,62],[163,51],[127,35],[108,11],[103,2],[80,8],[73,23],[63,25],[55,37],[55,12],[37,30]],
+    [[114,-22],[130,-12],[145,-10],[153,-28],[150,-38],[115,-35]],
+    [[130,31],[132,34],[141,40],[141,44],[130,45]]
+  ];
+  const CITIES = [
+    {n:'SYD', lon:151.2, lat:-33.9, i:0},
+    {n:'TKY', lon:139.7, lat:35.7,  i:1},
+    {n:'LON', lon:-0.1,  lat:51.5,  i:2},
+    {n:'NYC', lon:-74,   lat:40.7,  i:3},
+  ];
+  function polyPath(pts) {
+    return pts.map((p,i) => { const [x,y] = ll(p[0],p[1]); return (i===0?'M':'L')+x.toFixed(1)+' '+y.toFixed(1); }).join(' ') + ' Z';
+  }
+  return (
+    <ScrollView style={s.scroll} contentContainerStyle={s.pad}>
+      <View style={s.clkRow}>
+        <View><Text style={s.utct}>{timeStr}</Text><Text style={s.utcd}>{dateStr}</Text></View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={{ fontSize: 10, color: C.mu, textTransform: 'uppercase', letterSpacing: 1, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>UTC</Text>
+          <Text style={{ fontSize: 11, color: C.mu2, marginTop: 2, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>{mktOpen ? cnt + ' session' + (cnt !== 1 ? 's' : '') + ' open' : holiday ? 'Market holiday' : 'Market closed'}</Text>
+        </View>
+      </View>
+      <View style={{ backgroundColor: C.sur2, borderWidth: 0.5, borderColor: C.b1, borderRadius: 8, padding: 10, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ fontSize: 10, color: C.mu, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', textTransform: 'uppercase', letterSpacing: 0.8 }}>Your timezone</Text>
+        <Text style={{ fontSize: 12, color: C.gold, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontWeight: '600' }}>{localTz.split('/').pop().replace('_',' ')} {tzLabel}</Text>
+      </View>
+      {weekend && !holiday && (
+        <View style={s.mktClosed}>
+          <Text style={s.mktClosedTx}>FOREX MARKETS CLOSED - Weekend{'\n'}Forex and metals reopen Sun ~21:00 UTC{'\n'}({utcToLocal(21)}:00 your local time)</Text>
+        </View>
+      )}
+      {holiday && <View style={s.mktHol}><Text style={s.mktHolTx}>LOW LIQUIDITY - Market Holiday</Text></View>}
+      <View style={{ borderRadius: 10, overflow: 'hidden', borderWidth: 0.5, borderColor: C.b1, marginBottom: 12 }}>
+        <Svg width="390" height="160" viewBox="0 0 340 160" style={{ backgroundColor: '#07111e' }}>
+          {[...Array(7)].map((_,i) => { const x = (i/6*MW).toFixed(1); return <Line key={'vl'+i} x1={x} y1="0" x2={x} y2={String(MH)} stroke="rgba(100,160,255,0.05)" strokeWidth="0.5"/>; })}
+          {[...Array(5)].map((_,i) => { const y = (i/4*MH).toFixed(1); return <Line key={'hl'+i} x1="0" y1={y} x2={String(MW)} y2={y} stroke="rgba(100,160,255,0.05)" strokeWidth="0.5"/>; })}
+          {SESS.map((ss,i) => {
+            if (!openArr[i] || !ss.rx) return null;
+            const x1 = Math.max(0,(ss.rx[0]+180)/360*MW);
+            const x2 = Math.min(MW,(ss.rx[1]+180)/360*MW);
+            return <Rect key={'reg'+i} x={x1.toFixed(1)} y="0" width={(x2-x1).toFixed(1)} height={String(MH)} fill="rgba(201,168,76,0.07)"/>;
+          })}
+          {CONT.map((pts,i) => (<Path key={'c'+i} d={polyPath(pts)} fill="#0e2040" stroke="#1a4070" strokeWidth="0.5"/>))}
+          <Line x1="0" y1={(MH/2).toFixed(1)} x2={String(MW)} y2={(MH/2).toFixed(1)} stroke="rgba(201,168,76,0.2)" strokeWidth="0.5" strokeDasharray="3,3"/>
+          {CITIES.map((city) => {
+            const [cx,cy] = ll(city.lon, city.lat);
+            const open = openArr[city.i];
+            return (
+              <React.Fragment key={city.n}>
+                {open && <Circle cx={cx.toFixed(1)} cy={cy.toFixed(1)} r="8" fill="rgba(201,168,76,0.2)" stroke="rgba(201,168,76,0.5)" strokeWidth="1"/>}
+                <Circle cx={cx.toFixed(1)} cy={cy.toFixed(1)} r="2.5" fill={open ? '#c9a84c' : '#1a3050'}/>
+                <SvgText x={(cx+4).toFixed(1)} y={(cy-4).toFixed(1)} fontSize="6" fill={open ? '#c9a84c' : '#2a5070'} fontFamily="Menlo,monospace">{city.n}</SvgText>
+              </React.Fragment>
+            );
+          })}
+        </Svg>
+      </View>
+      <Text style={[s.sh, { marginBottom: 8 }]}>Forex and Metals Sessions</Text>
+      <View style={s.sessGrid}>
+        {SESS.map((ss, i) => {
+          const open = openArr[i];
+          const mins = minsLeft(ss, h, m);
+          const overlap = (i === 2 || i === 3) && lonOpen && nyOpen;
+          const localOpen = utcToLocal(ss.op);
+          const localClose = utcToLocal(ss.cl);
+          return (
+            <View key={i} style={[s.sessCard, open && s.sessCardOpen, !mktOpen && { opacity: 0.35 }]}>
+              <View style={s.sessCardTop}>
+                <Text style={s.sessName}>{ss.n}</Text>
+                <Badge type={open ? 'warn' : 'ok'} text={open ? 'OPEN' : 'CLOSED'} />
+              </View>
+              <Text style={s.sessTz}>{String(ss.op).padStart(2,'0')}:00-{String(ss.cl).padStart(2,'0')}:00 UTC</Text>
+              <Text style={[s.sessTz, { color: C.gold, opacity: 0.7 }]}>{localOpen}-{localClose} local</Text>
+              <Text style={[s.sessCd, open ? s.sessCdOpen : s.sessCdClosed]}>
+                {!mktOpen ? (weekend ? 'Market closed' : 'Holiday') : open ? 'Closes in ' + fmtCD(mins) : 'Opens in ' + fmtCD(mins)}
+              </Text>
+              {overlap && <Text style={s.overlap}>OVERLAP - PRIME WINDOW</Text>}
+            </View>
+          );
+        })}
+      </View>
+      <Text style={[s.sh, { marginBottom: 8, marginTop: 14 }]}>US Stock Market</Text>
+      <View style={[s.sessCard, { width: '100%' }, stockOpen && s.sessCardOpen, !mktOpen && { opacity: 0.35 }]}>
+        <View style={s.sessCardTop}>
+          <Text style={s.sessName}>NYSE / NASDAQ</Text>
+          <Badge type={stockOpen ? 'warn' : 'ok'} text={stockOpen ? 'OPEN' : 'CLOSED'} />
+        </View>
+        <Text style={s.sessTz}>14:30-21:00 UTC (Mon-Fri)</Text>
+        <Text style={[s.sessTz, { color: C.gold, opacity: 0.7 }]}>{utcToLocal(14.5)}-{utcToLocal(21)} local - EST 9:30 AM-4:00 PM</Text>
+        <Text style={[s.sessCd, stockOpen ? s.sessCdOpen : s.sessCdClosed]}>
+          {!mktOpen ? 'Market closed' : stockOpen ? 'Closes in ' + fmtCD(stockMinsLeft) : 'Opens in ' + fmtCD(stockMinsLeft)}
+        </Text>
+      </View>
+    </ScrollView>
+  );
+}
+
+function WatchlistTab({ state, setState }) {
+  const [selOpen, setSelOpen] = useState(false);
+  const [selSym, setSelSym] = useState('XAU/USD');
+  const symOptions = ['XAU/USD','XAG/USD','BTC/USD','ETH/USD','XRP/USD','ADA/USD','US30','GER30','NAS100','OIL','EUR/USD','GBP/USD','GBP/JPY','EUR/GBP','EUR/JPY','GBP/NZD','USD/JPY','AUD/JPY','CAD/JPY','AUD/USD','USD/CAD','USD/CHF','TSLA','NVDA','SHOP','TSN','V','AAP','ABCB','LMT'];
+  const add = () => {
+    if (state.watchlist.some(w => w.sym === selSym)) { Alert.alert(selSym + ' is already on your watchlist.'); return; }
+    setState(prev => ({ ...prev, watchlist: [...prev.watchlist, { sym: selSym, status: 'watching', note: '' }] }));
+  };
+  const setStatus = (i, status) => setState(prev => { const wl = [...prev.watchlist]; wl[i] = { ...wl[i], status }; return { ...prev, watchlist: wl }; });
+  const del = (i) => setState(prev => { const wl = [...prev.watchlist]; wl.splice(i, 1); return { ...prev, watchlist: wl }; });
+  const setNote = (i, note) => setState(prev => { const wl = [...prev.watchlist]; wl[i] = { ...wl[i], note }; return { ...prev, watchlist: wl }; });
+  return (
+    <ScrollView style={s.scroll} contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled">
+      <Text style={s.sh}>Your Watchlist</Text>
+      <View style={s.wlAdd}>
+        <View style={{ flex: 1 }}>
+          <TouchableOpacity style={s.card} onPress={() => setSelOpen(!selOpen)}>
+            <Text style={s.cardLabel}>Add instrument</Text>
+            <Text style={[s.cardInput, { color: C.gold }]}>{selSym} {selOpen ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+          {selOpen && (
+            <ScrollView style={[s.selModal, { maxHeight: 180 }]} nestedScrollEnabled>
+              {symOptions.map(o => (
+                <TouchableOpacity key={o} style={[s.selOption, o === selSym && s.selSelected]} onPress={() => { setSelSym(o); setSelOpen(false); }}>
+                  <Text style={[s.selOptionTx, o === selSym && s.selSelectedTx]}>{o}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+        <TouchableOpacity style={s.wlAddBtn} onPress={add}><Text style={s.wlAddBtnTx}>+ Add</Text></TouchableOpacity>
+      </View>
+      {state.watchlist.length === 0 ? <View style={s.empty}><Text style={s.emptyTx}>No instruments yet.{'\n'}Add from the dropdown above.</Text></View> :
+        state.watchlist.map((w, i) => (
+          <View key={i} style={[s.wlItem, w.status === 'active' ? s.wlItemActive : s.wlItemWatching]}>
+            <View style={s.wlTop}>
+              <Text style={s.wlSym}>{w.sym}</Text>
+              <View style={s.wlBtns}>
+                <TouchableOpacity style={[s.wlBtn, w.status === 'active' && s.wlBtnAct]} onPress={() => setStatus(i, 'active')}><Text style={[s.wlBtnTx, w.status === 'active' && s.wlBtnTxAct]}>Active</Text></TouchableOpacity>
+                <TouchableOpacity style={[s.wlBtn, w.status === 'watching' && s.wlBtnWat]} onPress={() => setStatus(i, 'watching')}><Text style={[s.wlBtnTx, w.status === 'watching' && s.wlBtnTxWat]}>Watching</Text></TouchableOpacity>
+                <TouchableOpacity style={[s.wlBtn]} onPress={() => del(i)}><Text style={s.wlBtnTx}>Remove</Text></TouchableOpacity>
+              </View>
+            </View>
+            <TextInput style={s.wlNoteInput} value={w.note} onChangeText={v => setNote(i, v)} placeholder="bias, setup notes, why watching..." placeholderTextColor={C.mu} multiline />
+          </View>
+        ))
+      }
+    </ScrollView>
+  );
+}
+
+export default function App() {
+  const [tab, setTab] = useState('calc');
+  const [state, setStateRaw] = useState({ start: 24930, bal: 24930, trades: [], dailyStart: 24930, watchlist: [] });
+  const setState = (updater) => {
+    setStateRaw(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      AsyncStorage.setItem('gladius_state', JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  };
+  useEffect(() => {
+    AsyncStorage.getItem('gladius_state').then(v => {
+      if (v) { try { const p = JSON.parse(v); if (!p.watchlist) p.watchlist = []; if (!p.dailyStart) p.dailyStart = p.bal; setStateRaw(p); } catch(e) {} }
+    }).catch(() => {});
+  }, []);
+  const [prefill, setPrefill] = useState(null);
+  const handleLogPress = (sym, dr) => { setPrefill({ sym, dr }); setTab('tracker'); };
+  const TABS = [
+    { key: 'calc', label: 'Calc' },
+    { key: 'tracker', label: 'Tracker' },
+    { key: 'challenge', label: 'Challenge' },
+    { key: 'sessions', label: 'Sessions' },
+    { key: 'watchlist', label: 'Watchlist' },
+  ];
+  return (
+    <SafeAreaView style={s.safe}>
+      <StatusBar style="light" />
+      <View style={s.header}>
+        <Text style={s.logo}>GLADIUS<Text style={s.logoSub}> pro</Text></Text>
+        <TouchableOpacity style={s.balPill} onPress={() => setTab('tracker')}>
+          <Text style={s.balPillTx}>{fm(state.bal)}</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={s.tabs}>
+        {TABS.map(t => (
+          <TouchableOpacity key={t.key} style={[s.tab, tab === t.key && s.tabOn]} onPress={() => setTab(t.key)}>
+            <Text style={[s.tabTx, tab === t.key && s.tabTxOn]}>{t.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      {tab === 'calc' && <CalcTab state={state} setState={setState} onLogPress={handleLogPress} />}
+      {tab === 'tracker' && <TrackerTab state={state} setState={setState} prefill={prefill} setPrefill={setPrefill} />}
+      {tab === 'challenge' && <ChallengeTab state={state} setState={setState} />}
+      {tab === 'sessions' && <SessionsTab />}
+      {tab === 'watchlist' && <WatchlistTab state={state} setState={setState} />}
+    </SafeAreaView>
+  );
+}
